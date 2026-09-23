@@ -4,331 +4,342 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SpatialFlow — Micro-Office &amp; Studio Layout Planner</title>
-<meta name="description" content="SpatialFlow helps small teams and studios plan their micro-office layout in minutes, not meetings.">
+<meta name="description" content="SpatialFlow helps small teams and studios plan their micro-office layout in minutes — drag furniture onto a scaled floor plan, see real-time cost, power and spacing, export a blueprint.">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          wood: {
+            50:  '#faf6f1',
+            100: '#f2e6d5',
+            200: '#e3cba8',
+            300: '#d1ab7a',
+            400: '#bf8c56',
+            500: '#a8713f',
+            600: '#8c5a32',
+            700: '#714829',
+            800: '#5c3a22',
+            900: '#4a2f1c'
+          }
+        },
+        boxShadow: {
+          soft: '0 2px 10px -2px rgba(41,37,33,0.06), 0 12px 28px -10px rgba(41,37,33,0.10)'
+        },
+        fontFamily: {
+          sans: ['ui-sans-serif','system-ui','-apple-system','Segoe UI','Roboto','Helvetica Neue','Arial','sans-serif']
+        }
+      }
+    }
+  };
+</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
 <style>
-  :root {
-    --bg: #0f1115;
-    --panel: #171a21;
-    --panel-2: #1f232c;
-    --border: #2a2f3a;
-    --text: #e8eaf0;
-    --text-dim: #9aa1b0;
-    --accent: #6ee7b7;
-    --accent-2: #60a5fa;
-    --danger: #f77f7f;
-    --cell: 32px;
-  }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    line-height: 1.5;
-  }
-  a { color: var(--accent-2); }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
-
-  /* ---- Hero ---- */
-  header.hero {
-    padding: 96px 0 72px;
-    background: radial-gradient(ellipse at top, #1a2332 0%, var(--bg) 60%);
-    border-bottom: 1px solid var(--border);
-  }
-  .brand { font-weight: 700; font-size: 20px; letter-spacing: -0.02em; }
-  .brand span { color: var(--accent); }
-  .hero h1 {
-    font-size: 44px;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-    margin: 28px 0 16px;
-    max-width: 720px;
-  }
-  .hero p.lede {
-    font-size: 18px;
-    color: var(--text-dim);
-    max-width: 560px;
-    margin: 0 0 32px;
-  }
-  .btn {
-    display: inline-block;
-    padding: 12px 22px;
-    border-radius: 8px;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
-    border: 1px solid transparent;
-  }
-  .btn-primary { background: var(--accent); color: #08130e; }
-  .btn-primary:hover { filter: brightness(1.08); }
-  .btn-ghost { background: transparent; color: var(--text); border-color: var(--border); margin-left: 12px; }
-  .btn-ghost:hover { border-color: var(--text-dim); }
-
-  /* ---- Pitch / features ---- */
-  section.pitch, section.features { padding: 72px 0; }
-  section.pitch { border-bottom: 1px solid var(--border); }
-  h2.section-title { font-size: 28px; letter-spacing: -0.01em; margin: 0 0 12px; }
-  p.section-lede { color: var(--text-dim); max-width: 640px; margin: 0 0 40px; }
-  .feature-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 20px;
-  }
-  .feature-card {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 22px;
-  }
-  .feature-card .icon { font-size: 24px; margin-bottom: 12px; }
-  .feature-card h3 { margin: 0 0 8px; font-size: 17px; }
-  .feature-card p { margin: 0; color: var(--text-dim); font-size: 14px; }
-
-  /* ---- Planner demo ---- */
-  section.demo { padding: 72px 0 96px; }
-  .demo-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-  .demo-toolbar .status { color: var(--text-dim); font-size: 13px; }
-  .demo-layout {
-    display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 20px;
-  }
-  @media (max-width: 820px) {
-    .demo-layout { grid-template-columns: 1fr; }
-  }
-  .catalog {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-    align-self: start;
-  }
-  .catalog h4 {
-    margin: 0 0 12px;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-dim);
-  }
-  .catalog-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--panel-2);
-    margin-bottom: 8px;
-    cursor: grab;
-    user-select: none;
-    touch-action: none;
-  }
-  .catalog-item:active { cursor: grabbing; }
-  .catalog-item .swatch {
-    width: 18px; height: 18px; border-radius: 4px; flex: none;
-  }
-  .catalog-item .label { font-size: 13px; }
-  .catalog-item .dims { margin-left: auto; font-size: 11px; color: var(--text-dim); }
-
-  .board-panel {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-  }
-  .board-controls {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-  }
-  .board-controls button {
-    background: var(--panel-2);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 13px;
-    cursor: pointer;
-  }
-  .board-controls button:hover { border-color: var(--text-dim); }
-  .board-controls button.danger { color: var(--danger); }
+  html { scroll-behavior: smooth; }
+  body { -webkit-font-smoothing: antialiased; }
 
   #board {
-    position: relative;
-    background:
-      linear-gradient(var(--panel-2) 1px, transparent 1px),
-      linear-gradient(90deg, var(--panel-2) 1px, transparent 1px);
-    background-size: var(--cell) var(--cell);
-    background-color: #12141a;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    touch-action: none;
+    background-image:
+      linear-gradient(#e7e2da 1px, transparent 1px),
+      linear-gradient(90deg, #e7e2da 1px, transparent 1px);
+    background-color: #fbf9f6;
   }
 
   .placed-item {
-    position: absolute;
-    border-radius: 6px;
-    border: 1px solid rgba(0,0,0,0.35);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 600;
-    color: #08130e;
-    cursor: grab;
-    user-select: none;
-    touch-action: none;
+    transition: box-shadow .15s ease, outline-color .15s ease, transform .1s ease;
   }
-  .placed-item:active { cursor: grabbing; }
-  .placed-item.invalid { outline: 2px solid var(--danger); }
-  .placed-item .item-controls {
-    position: absolute;
-    top: -12px;
-    right: -8px;
-    display: flex;
-    gap: 4px;
-  }
-  .placed-item .item-controls button {
-    width: 18px; height: 18px;
-    border-radius: 50%;
-    border: 1px solid var(--border);
-    background: var(--panel);
-    color: var(--text);
-    font-size: 10px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 0;
+  .placed-item:active { cursor: grabbing; transform: scale(1.01); }
+
+  .spacing-warning {
+    outline: 2px dashed #d97706;
+    outline-offset: 3px;
   }
 
-  footer {
-    border-top: 1px solid var(--border);
-    padding: 32px 0;
-    color: var(--text-dim);
-    font-size: 13px;
+  .drag-ghost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 60;
+    opacity: .85;
+    transform: translate(-50%, -50%);
   }
+
+  .catalog-item { touch-action: none; }
+  .placed-item { touch-action: none; }
+
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in-up { animation: fade-in-up .18s ease-out; }
+
+  #export-modal.is-open { display: flex; }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
 </head>
-<body>
 
-<header class="hero">
-  <div class="wrap">
-    <div class="brand">Spatial<span>Flow</span></div>
-    <h1>Plan your micro-office or studio layout before you move a single desk.</h1>
-    <p class="lede">
-      SpatialFlow is a lightweight layout planner for small teams, co-working
-      studios and creative spaces — drag furniture onto a grid, see it fit,
-      save it, done. This page is a proof-of-concept: everything below runs
-      entirely in your browser.
-    </p>
-    <a href="#demo" class="btn btn-primary">Try the planner demo</a>
-    <a href="#features" class="btn btn-ghost">See features</a>
+<body class="bg-stone-50 text-stone-800 font-sans antialiased">
+
+<!-- ===================================================================
+     Header
+==================================================================== -->
+<header class="sticky top-0 z-40 border-b border-stone-200 bg-stone-50/85 backdrop-blur">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-2 font-semibold tracking-tight text-lg">
+      <i data-lucide="layout-grid" class="w-5 h-5 text-wood-600"></i>
+      Spatial<span class="text-wood-600">Flow</span>
+    </div>
+    <nav class="hidden sm:flex items-center gap-8 text-sm text-stone-600">
+      <a href="#planner" class="hover:text-stone-900 transition-colors">Planner</a>
+      <a href="#summary" class="hover:text-stone-900 transition-colors">Blueprint</a>
+    </nav>
+    <a href="#planner" id="header-cta"
+       class="inline-flex items-center gap-1.5 rounded-lg bg-stone-900 text-white text-sm font-medium px-4 py-2 hover:bg-wood-700 transition-colors">
+      Launch Studio Planner
+    </a>
   </div>
 </header>
 
-<section class="pitch" id="pitch">
-  <div class="wrap">
-    <h2 class="section-title">Built for spaces too small for enterprise floor-planning tools</h2>
-    <p class="section-lede">
-      Most office-planning software is built for facilities teams managing
-      whole buildings. SpatialFlow is built for the studio down the hall —
-      a handful of desks, a meeting table, maybe a plant that needs a window.
-      Sketch it, share it, ship it.
-    </p>
-  </div>
-</section>
+<!-- ===================================================================
+     Landing hero
+==================================================================== -->
+<section class="relative overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-b from-wood-50 via-stone-50 to-stone-50 -z-10"></div>
+  <div class="max-w-5xl mx-auto px-5 sm:px-8 pt-24 pb-20 text-center">
+    <span class="inline-flex items-center gap-1.5 rounded-full border border-wood-200 bg-white px-3 py-1 text-xs font-medium text-wood-700 tracking-wide uppercase shadow-soft">
+      <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+      Small-space productivity pods
+    </span>
 
-<section class="features" id="features">
-  <div class="wrap">
-    <h2 class="section-title">Why teams use SpatialFlow</h2>
-    <p class="section-lede">A few reasons this fits a micro-office better than a spreadsheet or a whiteboard photo.</p>
-    <div class="feature-grid">
-      <div class="feature-card">
-        <div class="icon">🪑</div>
-        <h3>Drag-and-drop layout</h3>
-        <p>Place desks, chairs, meeting tables and plants directly onto a scaled grid of your room.</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">📐</div>
-        <h3>Fit checking built in</h3>
-        <p>SpatialFlow won't let furniture overlap or hang off the edge of your room — the layout you see is a layout that actually fits.</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">💾</div>
-        <h3>Your layout, saved locally</h3>
-        <p>Every change saves automatically to your browser. Close the tab, come back tomorrow, pick up where you left off.</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">⚡</div>
-        <h3>No install, no account</h3>
-        <p>This proof-of-concept is a single page. No sign-up, no backend, nothing to configure.</p>
-      </div>
-    </div>
-  </div>
-</section>
+    <h1 class="mt-6 text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-stone-900 leading-[1.1]">
+      Design your micro-office<br class="hidden sm:block"> before you buy a single desk.
+    </h1>
 
-<section class="demo" id="demo">
-  <div class="wrap">
-    <h2 class="section-title">Try it — plan a small studio</h2>
-    <p class="section-lede">
-      Drag an item from the catalog onto the grid. Drag placed items to move
-      them, use the buttons on a placed item to rotate or remove it. Your
-      layout saves automatically to this browser.
+    <p class="mt-6 text-lg text-stone-600 max-w-2xl mx-auto leading-relaxed">
+      SpatialFlow turns a spare room, garage corner or studio nook into a
+      custom productivity pod. Pick a real room size, drop in ergonomic
+      furniture and acoustic gear, and watch cost, power and spacing update
+      instantly — entirely in your browser.
     </p>
 
-    <div class="demo-toolbar">
-      <div class="board-controls">
-        <button id="btn-reset">Reset layout</button>
-      </div>
-      <div class="status" id="status-line">Loading…</div>
+    <div class="mt-9 flex flex-col sm:flex-row items-center justify-center gap-4">
+      <a href="#planner" id="hero-cta"
+         class="inline-flex items-center gap-2 rounded-lg bg-wood-600 text-white font-medium px-6 py-3.5 shadow-soft hover:bg-wood-700 active:scale-[0.98] transition-all">
+        Launch Studio Planner
+        <i data-lucide="move-down" class="w-4 h-4"></i>
+      </a>
+      <a href="#summary"
+         class="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white text-stone-700 font-medium px-6 py-3.5 hover:border-stone-400 hover:bg-stone-100 transition-colors">
+        See the blueprint output
+      </a>
     </div>
 
-    <div class="demo-layout">
-      <div class="catalog">
-        <h4>Furniture</h4>
-        <div id="catalog-list"></div>
+    <div class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
+      <div class="rounded-xl border border-stone-200 bg-white p-5 shadow-soft">
+        <i data-lucide="ruler" class="w-5 h-5 text-wood-600 mb-3"></i>
+        <h3 class="font-medium text-stone-900">Real room dimensions</h3>
+        <p class="mt-1 text-sm text-stone-500">Plan against an actual 8×10 or 10×12 ft footprint, not a guess.</p>
       </div>
-      <div class="board-panel">
-        <div id="board"></div>
+      <div class="rounded-xl border border-stone-200 bg-white p-5 shadow-soft">
+        <i data-lucide="zap" class="w-5 h-5 text-wood-600 mb-3"></i>
+        <h3 class="font-medium text-stone-900">Live power &amp; spacing</h3>
+        <p class="mt-1 text-sm text-stone-500">Outlet counts and clearance warnings update as you place items.</p>
+      </div>
+      <div class="rounded-xl border border-stone-200 bg-white p-5 shadow-soft">
+        <i data-lucide="shopping-cart" class="w-5 h-5 text-wood-600 mb-3"></i>
+        <h3 class="font-medium text-stone-900">Instant shopping list</h3>
+        <p class="mt-1 text-sm text-stone-500">Export a priced blueprint the moment your layout feels right.</p>
       </div>
     </div>
   </div>
 </section>
 
-<footer>
-  <div class="wrap">
-    SpatialFlow is a fictional product built as a proof-of-concept demo. No data leaves your browser.
+<!-- ===================================================================
+     Planner
+==================================================================== -->
+<section id="planner" class="border-t border-stone-200 bg-white">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8 py-16">
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+      <div>
+        <h2 class="text-2xl sm:text-3xl font-semibold tracking-tight text-stone-900">Micro-Office Layout Builder</h2>
+        <p class="mt-2 text-stone-500 max-w-xl">Pick a room size, place furniture from the catalog, and watch the numbers on the right update in real time.</p>
+      </div>
+      <button id="btn-reset"
+        class="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 text-stone-600 text-sm font-medium px-3.5 py-2 hover:border-stone-400 hover:bg-stone-50 transition-colors self-start sm:self-auto">
+        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+        Reset layout
+      </button>
+    </div>
+
+    <!-- Room preset selector -->
+    <div class="flex flex-wrap items-center gap-2 mb-6" id="room-presets"></div>
+
+    <!-- Notice banner -->
+    <div id="canvas-notice" class="hidden mb-4 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-sm px-4 py-2.5"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[220px_1fr_340px] gap-6 items-start">
+
+      <!-- Catalog -->
+      <aside class="lg:sticky lg:top-24">
+        <h3 class="text-xs font-semibold uppercase tracking-wide text-stone-400 mb-3">Furniture catalog</h3>
+        <div id="catalog-list" class="flex lg:flex-col gap-3 overflow-x-auto no-scrollbar pb-2 lg:pb-0 lg:overflow-visible"></div>
+        <p class="hidden lg:block mt-4 text-xs text-stone-400 leading-relaxed">Click an item to place it, or drag it onto the floor plan.</p>
+      </aside>
+
+      <!-- Canvas -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <div id="room-dims-label" class="text-sm font-medium text-stone-600"></div>
+          <div id="item-count-label" class="text-sm text-stone-400"></div>
+        </div>
+        <div class="rounded-xl border border-stone-200 bg-white p-3 sm:p-5 shadow-soft overflow-x-auto">
+          <div id="board" class="relative rounded-lg border border-stone-300 mx-auto"></div>
+        </div>
+      </div>
+
+      <!-- Live metrics -->
+      <aside class="space-y-4">
+        <div class="rounded-xl border border-stone-200 bg-stone-50 p-5">
+          <div class="flex items-center justify-between text-sm font-medium text-stone-700 mb-2">
+            <span class="inline-flex items-center gap-1.5"><i data-lucide="square-percent" class="w-4 h-4 text-wood-600"></i> Space utilization</span>
+            <span id="metric-util-pct">0%</span>
+          </div>
+          <div class="h-2 rounded-full bg-stone-200 overflow-hidden">
+            <div id="metric-util-bar" class="h-full bg-wood-500 transition-all duration-300 ease-out" style="width:0%"></div>
+          </div>
+          <p id="metric-util-detail" class="mt-1.5 text-xs text-stone-400">0 / 0 sq ft used</p>
+        </div>
+
+        <div class="rounded-xl border border-stone-200 bg-stone-50 p-5">
+          <div class="flex items-center gap-1.5 text-sm font-medium text-stone-700 mb-2">
+            <i data-lucide="zap" class="w-4 h-4 text-wood-600"></i> Power requirements
+          </div>
+          <p class="text-2xl font-semibold text-stone-900" id="metric-watts">0 W</p>
+          <p class="mt-1 text-xs text-stone-400" id="metric-outlets">0 outlets estimated</p>
+        </div>
+
+        <div id="spacing-card" class="rounded-xl border border-stone-200 bg-stone-50 p-5">
+          <div class="flex items-center gap-1.5 text-sm font-medium text-stone-700 mb-2">
+            <i data-lucide="triangle-alert" class="w-4 h-4 text-wood-600"></i> Spacing check
+          </div>
+          <p class="text-sm text-stone-500" id="metric-spacing">All clearances look good.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================
+     Blueprint & shopping list summary
+==================================================================== -->
+<section id="summary" class="border-t border-stone-200 bg-stone-50">
+  <div class="max-w-4xl mx-auto px-5 sm:px-8 py-16">
+    <h2 class="text-2xl sm:text-3xl font-semibold tracking-tight text-stone-900">Blueprint &amp; Shopping List</h2>
+    <p class="mt-2 text-stone-500">A live, itemized breakdown of everything on your floor plan right now.</p>
+
+    <div class="mt-8 rounded-xl border border-stone-200 bg-white shadow-soft overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-stone-50 text-stone-500 text-xs uppercase tracking-wide">
+          <tr>
+            <th class="text-left font-medium px-5 py-3">Item</th>
+            <th class="text-center font-medium px-3 py-3">Qty</th>
+            <th class="text-right font-medium px-3 py-3">Unit price</th>
+            <th class="text-right font-medium px-5 py-3">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody id="shopping-list-body" class="divide-y divide-stone-100"></tbody>
+      </table>
+      <div id="shopping-list-empty" class="px-5 py-10 text-center text-sm text-stone-400">
+        Nothing placed yet — add furniture in the planner above to build your blueprint.
+      </div>
+      <div class="flex items-center justify-between border-t border-stone-200 bg-stone-50 px-5 py-4">
+        <span class="text-sm font-medium text-stone-600">Estimated total</span>
+        <span id="shopping-list-total" class="text-xl font-semibold text-stone-900">$0</span>
+      </div>
+    </div>
+
+    <div class="mt-6 flex flex-col sm:flex-row gap-3">
+      <button id="btn-export"
+        class="inline-flex items-center justify-center gap-2 rounded-lg bg-stone-900 text-white font-medium px-6 py-3.5 hover:bg-wood-700 active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none">
+        <i data-lucide="download" class="w-4 h-4"></i>
+        Export / Save Blueprint
+      </button>
+    </div>
+  </div>
+</section>
+
+<footer class="border-t border-stone-200 py-10">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8 text-sm text-stone-400">
+    SpatialFlow is a fictional product built as a proof-of-concept demo. Everything runs in your browser — no data leaves your device.
   </div>
 </footer>
+
+<!-- ===================================================================
+     Export / success modal
+==================================================================== -->
+<div id="export-modal" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
+  <div id="export-modal-backdrop" class="absolute inset-0 bg-stone-900/50 backdrop-blur-sm"></div>
+  <div class="relative w-full max-w-lg rounded-2xl bg-white shadow-soft p-6 sm:p-8 fade-in-up">
+    <div class="flex items-start justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-wood-100 flex items-center justify-center">
+          <i data-lucide="check-circle-2" class="w-5 h-5 text-wood-600"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold text-stone-900">Blueprint ready</h3>
+          <p class="text-sm text-stone-500">Your layout has been captured below.</p>
+        </div>
+      </div>
+      <button id="btn-modal-close" class="text-stone-400 hover:text-stone-600 transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <dl id="modal-summary" class="mt-6 grid grid-cols-2 gap-4 text-sm"></dl>
+
+    <div class="mt-7 flex flex-col sm:flex-row gap-3">
+      <button id="btn-download-json"
+        class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-wood-600 text-white font-medium px-5 py-3 hover:bg-wood-700 active:scale-[0.98] transition-all">
+        <i data-lucide="file-json" class="w-4 h-4"></i>
+        Download JSON
+      </button>
+      <button id="btn-modal-done"
+        class="flex-1 inline-flex items-center justify-center rounded-lg border border-stone-300 text-stone-700 font-medium px-5 py-3 hover:bg-stone-50 transition-colors">
+        Done
+      </button>
+    </div>
+  </div>
+</div>
 
 <script>
 (function () {
   "use strict";
 
   /* =====================================================================
-   * Dat — FurnitureCatalogEntry, RoomConfig, FurnitureItem, Layout,
-   * StoredLayoutJSON. See docs/site/ARCHITECTURE.md §3.
+   * Dat — RoomPreset, RoomConfig, FurnitureCatalogEntry, FurnitureItem,
+   * Layout, StoredLayoutJSON. See docs/site/ARCHITECTURE.md §3.
    * ===================================================================*/
 
-  var CELL_PX = 32;
-  var STORAGE_KEY = "spatialflow.layout.v1";
+  var STORAGE_KEY = "spatialflow.layout.v2";
+  var OUTLETS_PER_STRIP = 4;
+  var CIRCUIT_WATT_CAP = 1800;
 
-  /** @type {Array<{type:string,label:string,w:number,h:number,color:string}>} */
+  var ROOM_PRESETS = [
+    { id: "8x10",  label: "8 × 10 ft — compact pod", widthFt: 8,  heightFt: 10 },
+    { id: "10x12", label: "10 × 12 ft — studio",     widthFt: 10, heightFt: 12 },
+    { id: "12x14", label: "12 × 14 ft — team pod",   widthFt: 12, heightFt: 14 }
+  ];
+
   var FURNITURE_CATALOG = [
-    { type: "desk",    label: "Desk",         w: 3, h: 2, color: "#6ee7b7" },
-    { type: "chair",   label: "Chair",        w: 1, h: 1, color: "#60a5fa" },
-    { type: "table",   label: "Meeting table",w: 4, h: 2, color: "#fbbf24" },
-    { type: "plant",   label: "Plant",        w: 1, h: 1, color: "#34d399" },
-    { type: "shelf",   label: "Shelf",        w: 3, h: 1, color: "#f472b6" },
-    { type: "sofa",    label: "Sofa",         w: 3, h: 2, color: "#a78bfa" }
+    { type: "standing-desk",  label: "Ergonomic Standing Desk", icon: "table-2",   w: 3, h: 2, costUsd: 449, watts: 90, clearanceFt: 1, color: "#bf8c56" },
+    { type: "acoustic-panel", label: "Acoustic Pod Panel",      icon: "volume-2",  w: 2, h: 1, costUsd: 189, watts: 0,  clearanceFt: 0, color: "#8c5a32" },
+    { type: "lighting-rig",   label: "Studio Lighting Rig",     icon: "lightbulb", w: 2, h: 1, costUsd: 129, watts: 60, clearanceFt: 0, color: "#d1ab7a" },
+    { type: "bookshelf",      label: "Bookshelf",               icon: "book-open", w: 3, h: 1, costUsd: 219, watts: 0,  clearanceFt: 0, color: "#714829" },
+    { type: "ergo-chair",     label: "Ergonomic Chair",         icon: "armchair",  w: 1, h: 1, costUsd: 259, watts: 0,  clearanceFt: 1, color: "#a8713f" }
   ];
 
   function catalogEntry(type) {
@@ -338,24 +349,34 @@
     return null;
   }
 
+  function roomPreset(id) {
+    for (var i = 0; i < ROOM_PRESETS.length; i++) {
+      if (ROOM_PRESETS[i].id === id) return ROOM_PRESETS[i];
+    }
+    return null;
+  }
+
   function defaultLayout() {
+    var preset = ROOM_PRESETS[0];
     return {
-      room: { widthCells: 20, heightCells: 12 },
+      room: { presetId: preset.id, widthFt: preset.widthFt, heightFt: preset.heightFt },
       items: []
     };
   }
 
   var state = { layout: defaultLayout() };
   var nextId = 1;
+  var noticeTimer = null;
 
   /* =====================================================================
-   * Composition rules (ARCHITECTURE.md §6): bounds + no-overlap invariants.
+   * Composition rules (ARCHITECTURE.md §6): bounds + no-overlap are HARD;
+   * clearance/spacing is SOFT (warning only, never blocks placement).
    * ===================================================================*/
 
   function withinBounds(layout, item) {
     return item.x >= 0 && item.y >= 0 &&
-      item.x + item.w <= layout.room.widthCells &&
-      item.y + item.h <= layout.room.heightCells;
+      item.x + item.w <= layout.room.widthFt &&
+      item.y + item.h <= layout.room.heightFt;
   }
 
   function overlaps(a, b) {
@@ -377,9 +398,33 @@
   }
 
   /* =====================================================================
-   * Trn — instantiate, addItem, moveItem, rotateItem, removeItem.
-   * See docs/site/ARCHITECTURE.md §5, §7.
+   * Trn — selectRoom, instantiate, addItem, moveItem, rotateItem,
+   * removeItem. See docs/site/ARCHITECTURE.md §5, §7.
    * ===================================================================*/
+
+  /** selectRoom : RoomPreset -> Layout (drops items that no longer fit, notifies) */
+  function selectRoom(presetId) {
+    var preset = roomPreset(presetId);
+    if (!preset) return;
+    var newRoom = { presetId: preset.id, widthFt: preset.widthFt, heightFt: preset.heightFt };
+    var kept = [];
+    var droppedCount = 0;
+    var probe = { room: newRoom, items: [] };
+    state.layout.items.forEach(function (item) {
+      if (withinBounds(probe, item) && !hasCollision(probe, item, item.id)) {
+        probe.items.push(item);
+        kept.push(item);
+      } else {
+        droppedCount++;
+      }
+    });
+    state.layout.room = newRoom;
+    state.layout.items = kept;
+    if (droppedCount > 0) {
+      showNotice(droppedCount + " item" + (droppedCount === 1 ? "" : "s") +
+        " removed — didn't fit the new room size.");
+    }
+  }
 
   function instantiate(entry, x, y) {
     return {
@@ -391,35 +436,44 @@
     };
   }
 
-  /** addItem : (Layout, FurnitureCatalogEntry, x, y) -> Layout (Total, clamped) */
+  /** addItem : (Layout, FurnitureCatalogEntry, x, y) -> Layout (Total, clamped, hard-reject overlap) */
   function addItem(layout, entry, x, y) {
     var item = instantiate(entry, x, y);
-    item.x = Math.max(0, Math.min(item.x, layout.room.widthCells - item.w));
-    item.y = Math.max(0, Math.min(item.y, layout.room.heightCells - item.h));
-    if (!placementValid(layout, item, null)) return layout; // reject silently, PoC-level
+    item.x = Math.max(0, Math.min(item.x, layout.room.widthFt - item.w));
+    item.y = Math.max(0, Math.min(item.y, layout.room.heightFt - item.h));
+    if (!placementValid(layout, item, null)) return false;
     layout.items.push(item);
-    return layout;
+    return true;
+  }
+
+  /** findFreeSlot : (Layout, FurnitureCatalogEntry) -> {x,y} | null — for click-to-place */
+  function findFreeSlot(layout, entry) {
+    for (var y = 0; y <= layout.room.heightFt - entry.h; y++) {
+      for (var x = 0; x <= layout.room.widthFt - entry.w; x++) {
+        var candidate = { x: x, y: y, w: entry.w, h: entry.h };
+        if (placementValid(layout, candidate, null)) return { x: x, y: y };
+      }
+    }
+    return null;
   }
 
   /** moveItem : (Layout, id, x, y) -> Layout (Partial: no-op if invalid) */
   function moveItem(layout, id, x, y) {
     var item = findItem(layout, id);
-    if (!item) return layout;
+    if (!item) return;
     var candidate = { x: x, y: y, w: item.w, h: item.h };
-    if (!placementValid(layout, candidate, id)) return layout;
+    if (!placementValid(layout, candidate, id)) return;
     item.x = x; item.y = y;
-    return layout;
   }
 
   /** rotateItem : (Layout, id) -> Layout (Partial: no-op if invalid after swap) */
   function rotateItem(layout, id) {
     var item = findItem(layout, id);
-    if (!item) return layout;
+    if (!item) return;
     var swapped = { x: item.x, y: item.y, w: item.h, h: item.w };
-    if (!placementValid(layout, swapped, id)) return layout;
+    if (!placementValid(layout, swapped, id)) return;
     var tmp = item.w; item.w = item.h; item.h = tmp;
     item.rotation = (item.rotation + 90) % 180;
-    return layout;
   }
 
   /** removeItem : (Layout, id) -> Layout (Partial: no-op if id absent) */
@@ -428,9 +482,8 @@
     for (var i = 0; i < layout.items.length; i++) {
       if (layout.items[i].id === id) { idx = i; break; }
     }
-    if (idx === -1) return layout;
+    if (idx === -1) return;
     layout.items.splice(idx, 1);
-    return layout;
   }
 
   function findItem(layout, id) {
@@ -438,6 +491,85 @@
       if (layout.items[i].id === id) return layout.items[i];
     }
     return null;
+  }
+
+  /* =====================================================================
+   * Deduced Trn — computeUtilization, computePower, computeSpacing,
+   * computeShoppingList, buildBlueprint. Pure functions of Layout only,
+   * never stored. See docs/site/ARCHITECTURE.md §4, §6.
+   * ===================================================================*/
+
+  /** computeUtilization : Layout -> UtilizationMetrics (Deduced) */
+  function computeUtilization(layout) {
+    var usedSqFt = 0;
+    layout.items.forEach(function (item) { usedSqFt += item.w * item.h; });
+    var totalSqFt = layout.room.widthFt * layout.room.heightFt;
+    var pct = totalSqFt > 0 ? (usedSqFt / totalSqFt) * 100 : 0;
+    return { usedSqFt: usedSqFt, totalSqFt: totalSqFt, pct: pct };
+  }
+
+  /** computePower : Layout -> PowerEstimate (Deduced) */
+  function computePower(layout) {
+    var totalWatts = 0, poweredCount = 0;
+    layout.items.forEach(function (item) {
+      var entry = catalogEntry(item.type);
+      if (entry && entry.watts > 0) { totalWatts += entry.watts; poweredCount++; }
+    });
+    var outlets = poweredCount === 0 ? 0 : Math.max(
+      Math.ceil(poweredCount / OUTLETS_PER_STRIP),
+      Math.ceil(totalWatts / CIRCUIT_WATT_CAP)
+    );
+    return { totalWatts: totalWatts, poweredCount: poweredCount, outlets: outlets };
+  }
+
+  /** computeSpacing : Layout -> SpacingWarnings (Deduced, soft) */
+  function computeSpacing(layout) {
+    var flaggedIds = {};
+    var pairs = [];
+    for (var i = 0; i < layout.items.length; i++) {
+      for (var j = i + 1; j < layout.items.length; j++) {
+        var a = layout.items[i], b = layout.items[j];
+        var ca = catalogEntry(a.type), cb = catalogEntry(b.type);
+        var ea = { x: a.x - ca.clearanceFt, y: a.y - ca.clearanceFt, w: a.w + 2 * ca.clearanceFt, h: a.h + 2 * ca.clearanceFt };
+        var eb = { x: b.x - cb.clearanceFt, y: b.y - cb.clearanceFt, w: b.w + 2 * cb.clearanceFt, h: b.h + 2 * cb.clearanceFt };
+        if ((ca.clearanceFt > 0 || cb.clearanceFt > 0) && overlaps(ea, eb)) {
+          pairs.push([a.id, b.id]);
+          flaggedIds[a.id] = true;
+          flaggedIds[b.id] = true;
+        }
+      }
+    }
+    return { pairs: pairs, flaggedIds: flaggedIds };
+  }
+
+  /** computeShoppingList : Layout -> ShoppingList (Deduced) */
+  function computeShoppingList(layout) {
+    var groups = {};
+    var order = [];
+    layout.items.forEach(function (item) {
+      if (!groups[item.type]) { groups[item.type] = 0; order.push(item.type); }
+      groups[item.type]++;
+    });
+    var rows = order.map(function (type) {
+      var entry = catalogEntry(type);
+      var qty = groups[type];
+      return { type: type, label: entry.label, qty: qty, unitCost: entry.costUsd, subtotal: qty * entry.costUsd };
+    });
+    var total = rows.reduce(function (sum, r) { return sum + r.subtotal; }, 0);
+    return { rows: rows, total: total };
+  }
+
+  /** buildBlueprint : Layout -> Blueprint (Deduced snapshot of everything above) */
+  function buildBlueprint(layout) {
+    return {
+      room: Object.assign({}, layout.room),
+      items: layout.items.map(function (i) { return Object.assign({}, i); }),
+      utilization: computeUtilization(layout),
+      power: computePower(layout),
+      spacing: computeSpacing(layout),
+      shoppingList: computeShoppingList(layout),
+      exportedAt: new Date().toISOString()
+    };
   }
 
   /* =====================================================================
@@ -453,14 +585,15 @@
   function deserialize(json) {
     try {
       var parsed = JSON.parse(json);
-      if (!parsed || !parsed.room || !Array.isArray(parsed.items)) {
+      if (!parsed || !parsed.room || !roomPreset(parsed.room.presetId) || !Array.isArray(parsed.items)) {
         throw new Error("malformed layout");
       }
       var candidate = { room: parsed.room, items: [] };
       for (var i = 0; i < parsed.items.length; i++) {
         var it = parsed.items[i];
         if (typeof it.x !== "number" || typeof it.y !== "number" ||
-            typeof it.w !== "number" || typeof it.h !== "number") {
+            typeof it.w !== "number" || typeof it.h !== "number" ||
+            !catalogEntry(it.type)) {
           throw new Error("malformed item");
         }
         if (!withinBounds(candidate, it) || hasCollision(candidate, it, it.id)) {
@@ -477,62 +610,122 @@
   }
 
   /* =====================================================================
-   * Trm — persist / restore. The only two functions touching localStorage.
-   * See docs/site/ARCHITECTURE.md §7, §9 Law 2.
+   * Trm — persist / restore / downloadBlueprint. The only functions that
+   * cross a Loc boundary. See docs/site/ARCHITECTURE.md §7, §9 Law 2.
    * ===================================================================*/
 
   /** persist : Layout(runtime) -> StoredLayoutJSON(localStorage) */
   function persist(layout) {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, serialize(layout));
-    } catch (e) {
-      // storage unavailable (private mode, quota) — degrade silently, PoC-level
-    }
+    try { window.localStorage.setItem(STORAGE_KEY, serialize(layout)); }
+    catch (e) { /* storage unavailable — degrade silently, PoC-level */ }
   }
 
   /** restore : StoredLayoutJSON(localStorage) -> Layout(runtime) */
   function restore() {
     var raw = null;
-    try {
-      raw = window.localStorage.getItem(STORAGE_KEY);
-    } catch (e) {
-      return defaultLayout();
-    }
+    try { raw = window.localStorage.getItem(STORAGE_KEY); }
+    catch (e) { return defaultLayout(); }
     if (!raw) return defaultLayout();
     return deserialize(raw);
+  }
+
+  /** downloadBlueprint : Blueprint(runtime) -> JSON file(downloads) */
+  function downloadBlueprint(blueprint) {
+    var blob = new Blob([JSON.stringify(blueprint, null, 2)], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "spatialflow-blueprint-" + blueprint.room.presetId + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  /* =====================================================================
+   * DOM refs
+   * ===================================================================*/
+
+  var boardEl = document.getElementById("board");
+  var catalogListEl = document.getElementById("catalog-list");
+  var roomPresetsEl = document.getElementById("room-presets");
+  var roomDimsLabelEl = document.getElementById("room-dims-label");
+  var itemCountLabelEl = document.getElementById("item-count-label");
+  var noticeEl = document.getElementById("canvas-notice");
+
+  var utilPctEl = document.getElementById("metric-util-pct");
+  var utilBarEl = document.getElementById("metric-util-bar");
+  var utilDetailEl = document.getElementById("metric-util-detail");
+  var wattsEl = document.getElementById("metric-watts");
+  var outletsEl = document.getElementById("metric-outlets");
+  var spacingCardEl = document.getElementById("spacing-card");
+  var spacingTextEl = document.getElementById("metric-spacing");
+
+  var shoppingBodyEl = document.getElementById("shopping-list-body");
+  var shoppingEmptyEl = document.getElementById("shopping-list-empty");
+  var shoppingTotalEl = document.getElementById("shopping-list-total");
+  var btnExportEl = document.getElementById("btn-export");
+
+  var modalEl = document.getElementById("export-modal");
+  var modalSummaryEl = document.getElementById("modal-summary");
+  var btnDownloadJsonEl = document.getElementById("btn-download-json");
+
+  var CELL_MIN = 26, CELL_MAX = 56;
+
+  function showNotice(msg) {
+    if (noticeTimer) clearTimeout(noticeTimer);
+    noticeEl.textContent = msg;
+    noticeEl.classList.remove("hidden");
+    noticeTimer = setTimeout(function () { noticeEl.classList.add("hidden"); }, 4500);
   }
 
   /* =====================================================================
    * renderGrid : Layout -> DOM
    * ===================================================================*/
 
-  var boardEl = document.getElementById("board");
-  var catalogListEl = document.getElementById("catalog-list");
-  var statusEl = document.getElementById("status-line");
+  function cellSizePx() {
+    var wrap = boardEl.parentElement;
+    var available = wrap.clientWidth - 16; // minus canvas padding
+    var byWidth = Math.floor(available / state.layout.room.widthFt);
+    return Math.max(CELL_MIN, Math.min(CELL_MAX, byWidth));
+  }
 
-  function renderGrid() {
+  function renderGrid(spacing) {
     var layout = state.layout;
-    boardEl.style.width = (layout.room.widthCells * CELL_PX) + "px";
-    boardEl.style.height = (layout.room.heightCells * CELL_PX) + "px";
+    var cellPx = cellSizePx();
+    boardEl.style.width = (layout.room.widthFt * cellPx) + "px";
+    boardEl.style.height = (layout.room.heightFt * cellPx) + "px";
+    boardEl.style.backgroundSize = cellPx + "px " + cellPx + "px";
     boardEl.innerHTML = "";
 
     layout.items.forEach(function (item) {
-      var el = document.createElement("div");
-      el.className = "placed-item";
-      el.dataset.id = item.id;
-      el.style.left = (item.x * CELL_PX) + "px";
-      el.style.top = (item.y * CELL_PX) + "px";
-      el.style.width = (item.w * CELL_PX) + "px";
-      el.style.height = (item.h * CELL_PX) + "px";
       var entry = catalogEntry(item.type);
-      el.style.background = entry ? entry.color : "#999";
-      el.textContent = entry ? entry.label : item.type;
+      var el = document.createElement("div");
+      el.className = "placed-item absolute rounded-md shadow-sm flex flex-col items-center justify-center text-white text-[11px] font-medium text-center leading-tight px-1 cursor-grab select-none";
+      if (spacing.flaggedIds[item.id]) el.classList.add("spacing-warning");
+      el.dataset.id = item.id;
+      el.style.left = (item.x * cellPx) + "px";
+      el.style.top = (item.y * cellPx) + "px";
+      el.style.width = (item.w * cellPx) + "px";
+      el.style.height = (item.h * cellPx) + "px";
+      el.style.background = entry.color;
+
+      var icon = document.createElement("i");
+      icon.setAttribute("data-lucide", entry.icon);
+      icon.className = "w-4 h-4 mb-0.5 pointer-events-none";
+      el.appendChild(icon);
+
+      var label = document.createElement("span");
+      label.className = "pointer-events-none";
+      label.textContent = entry.label;
+      el.appendChild(label);
 
       var controls = document.createElement("div");
-      controls.className = "item-controls";
+      controls.className = "absolute -top-3 -right-2 flex gap-1";
 
       var rotateBtn = document.createElement("button");
-      rotateBtn.textContent = "⟳";
+      rotateBtn.className = "w-6 h-6 rounded-full bg-white border border-stone-300 shadow-sm flex items-center justify-center text-stone-600 hover:bg-stone-50 transition-colors";
+      rotateBtn.innerHTML = '<i data-lucide="rotate-cw" class="w-3 h-3 pointer-events-none"></i>';
       rotateBtn.title = "Rotate";
       rotateBtn.addEventListener("click", function (ev) {
         ev.stopPropagation();
@@ -541,7 +734,8 @@
       });
 
       var removeBtn = document.createElement("button");
-      removeBtn.textContent = "×";
+      removeBtn.className = "w-6 h-6 rounded-full bg-white border border-stone-300 shadow-sm flex items-center justify-center text-stone-600 hover:bg-red-50 hover:text-red-600 transition-colors";
+      removeBtn.innerHTML = '<i data-lucide="x" class="w-3 h-3 pointer-events-none"></i>';
       removeBtn.title = "Remove";
       removeBtn.addEventListener("click", function (ev) {
         ev.stopPropagation();
@@ -553,75 +747,182 @@
       controls.appendChild(removeBtn);
       el.appendChild(controls);
 
-      attachPlacedItemDrag(el, item.id);
+      attachPlacedItemDrag(el, item.id, cellPx);
       boardEl.appendChild(el);
     });
 
-    statusEl.textContent = layout.items.length + " item" +
-      (layout.items.length === 1 ? "" : "s") + " placed — autosaved to this browser";
+    roomDimsLabelEl.textContent = layout.room.widthFt + " × " + layout.room.heightFt + " ft floor plan";
+    itemCountLabelEl.textContent = layout.items.length + " item" + (layout.items.length === 1 ? "" : "s") + " placed";
+  }
+
+  function renderRoomPresets() {
+    roomPresetsEl.innerHTML = "";
+    ROOM_PRESETS.forEach(function (preset) {
+      var btn = document.createElement("button");
+      var active = state.layout.room.presetId === preset.id;
+      btn.className = "rounded-full px-4 py-2 text-sm font-medium border transition-colors " +
+        (active
+          ? "bg-stone-900 text-white border-stone-900"
+          : "bg-white text-stone-600 border-stone-300 hover:border-stone-400 hover:bg-stone-50");
+      btn.textContent = preset.label;
+      btn.addEventListener("click", function () {
+        if (state.layout.room.presetId === preset.id) return;
+        selectRoom(preset.id);
+        afterEdit();
+      });
+      roomPresetsEl.appendChild(btn);
+    });
   }
 
   function renderCatalog() {
     catalogListEl.innerHTML = "";
     FURNITURE_CATALOG.forEach(function (entry) {
       var el = document.createElement("div");
-      el.className = "catalog-item";
-      el.draggable = false;
+      el.className = "catalog-item flex-shrink-0 w-44 lg:w-auto flex items-center gap-3 rounded-lg border border-stone-200 bg-white px-3 py-2.5 cursor-grab hover:border-wood-300 hover:shadow-soft transition-all";
 
       var swatch = document.createElement("div");
-      swatch.className = "swatch";
+      swatch.className = "w-9 h-9 rounded-md flex items-center justify-center flex-shrink-0 text-white";
       swatch.style.background = entry.color;
+      swatch.innerHTML = '<i data-lucide="' + entry.icon + '" class="w-4.5 h-4.5 pointer-events-none" style="width:18px;height:18px"></i>';
 
-      var label = document.createElement("span");
-      label.className = "label";
+      var info = document.createElement("div");
+      info.className = "min-w-0";
+      var label = document.createElement("div");
+      label.className = "text-sm font-medium text-stone-800 truncate";
       label.textContent = entry.label;
-
-      var dims = document.createElement("span");
-      dims.className = "dims";
-      dims.textContent = entry.w + "×" + entry.h;
+      var meta = document.createElement("div");
+      meta.className = "text-xs text-stone-400 flex items-center gap-1.5";
+      meta.innerHTML = entry.w + "×" + entry.h + " ft &middot; $" + entry.costUsd +
+        (entry.watts > 0 ? ' &middot; <span class="text-wood-600">' + entry.watts + "W</span>" : "");
+      info.appendChild(label);
+      info.appendChild(meta);
 
       el.appendChild(swatch);
-      el.appendChild(label);
-      el.appendChild(dims);
+      el.appendChild(info);
       attachCatalogDrag(el, entry);
       catalogListEl.appendChild(el);
     });
   }
 
+  function renderMetrics() {
+    var layout = state.layout;
+    var util = computeUtilization(layout);
+    var power = computePower(layout);
+    var spacing = computeSpacing(layout);
+    var shopping = computeShoppingList(layout);
+
+    utilPctEl.textContent = Math.round(util.pct) + "%";
+    utilBarEl.style.width = Math.min(100, util.pct) + "%";
+    utilDetailEl.textContent = util.usedSqFt + " / " + util.totalSqFt + " sq ft used";
+
+    wattsEl.textContent = power.totalWatts + " W";
+    outletsEl.textContent = power.outlets + " outlet" + (power.outlets === 1 ? "" : "s") +
+      " estimated (" + power.poweredCount + " powered item" + (power.poweredCount === 1 ? "" : "s") + ")";
+
+    if (spacing.pairs.length > 0) {
+      spacingCardEl.classList.remove("border-stone-200", "bg-stone-50");
+      spacingCardEl.classList.add("border-amber-300", "bg-amber-50");
+      spacingTextEl.className = "text-sm text-amber-700";
+      spacingTextEl.textContent = spacing.pairs.length + " item pair" + (spacing.pairs.length === 1 ? "" : "s") +
+        " closer than recommended clearance — layout still allowed.";
+    } else {
+      spacingCardEl.classList.add("border-stone-200", "bg-stone-50");
+      spacingCardEl.classList.remove("border-amber-300", "bg-amber-50");
+      spacingTextEl.className = "text-sm text-stone-500";
+      spacingTextEl.textContent = "All clearances look good.";
+    }
+
+    shoppingBodyEl.innerHTML = "";
+    if (shopping.rows.length === 0) {
+      shoppingEmptyEl.classList.remove("hidden");
+      btnExportEl.setAttribute("disabled", "disabled");
+    } else {
+      shoppingEmptyEl.classList.add("hidden");
+      btnExportEl.removeAttribute("disabled");
+      shopping.rows.forEach(function (row) {
+        var tr = document.createElement("tr");
+        tr.innerHTML =
+          '<td class="px-5 py-3 text-stone-700">' + row.label + '</td>' +
+          '<td class="px-3 py-3 text-center text-stone-500">' + row.qty + '</td>' +
+          '<td class="px-3 py-3 text-right text-stone-500">$' + row.unitCost.toLocaleString() + '</td>' +
+          '<td class="px-5 py-3 text-right font-medium text-stone-800">$' + row.subtotal.toLocaleString() + '</td>';
+        shoppingBodyEl.appendChild(tr);
+      });
+    }
+    shoppingTotalEl.textContent = "$" + shopping.total.toLocaleString();
+
+    return spacing;
+  }
+
   function afterEdit() {
     persist(state.layout);
-    renderGrid();
+    var spacing = renderMetrics();
+    renderRoomPresets();
+    renderGrid(spacing);
+    if (window.lucide) window.lucide.createIcons();
   }
 
   /* =====================================================================
-   * Pointer-driven drag: catalog -> board (addItem), and board -> board
-   * (moveItem). Native Pointer Events, no external library (design.md).
+   * Pointer-driven interaction: click-to-place (default, touch-friendly)
+   * and pointer-drag (desktop precision). Native Pointer Events only —
+   * no external drag library, per design.md.
    * ===================================================================*/
 
   function attachCatalogDrag(el, entry) {
     el.addEventListener("pointerdown", function (downEv) {
       downEv.preventDefault();
-      var ghost = el.cloneNode(true);
-      ghost.style.position = "fixed";
-      ghost.style.zIndex = "1000";
-      ghost.style.pointerEvents = "none";
-      ghost.style.width = (entry.w * CELL_PX) + "px";
-      ghost.style.opacity = "0.85";
-      document.body.appendChild(ghost);
-      moveGhost(ghost, downEv.clientX, downEv.clientY);
+      var startX = downEv.clientX, startY = downEv.clientY;
+      var dragging = false;
+      var ghost = null;
 
-      function onMove(ev) { moveGhost(ghost, ev.clientX, ev.clientY); }
+      function ensureGhost(clientX, clientY) {
+        if (ghost) return;
+        ghost = document.createElement("div");
+        ghost.className = "drag-ghost rounded-md flex items-center justify-center text-white text-xs font-medium";
+        ghost.style.width = (entry.w * 36) + "px";
+        ghost.style.height = (entry.h * 36) + "px";
+        ghost.style.background = entry.color;
+        ghost.textContent = entry.label;
+        document.body.appendChild(ghost);
+        moveGhost(clientX, clientY);
+      }
+      function moveGhost(clientX, clientY) {
+        if (!ghost) return;
+        ghost.style.left = clientX + "px";
+        ghost.style.top = clientY + "px";
+      }
+      function onMove(ev) {
+        if (!dragging && (Math.abs(ev.clientX - startX) > 5 || Math.abs(ev.clientY - startY) > 5)) {
+          dragging = true;
+        }
+        if (dragging) { ensureGhost(ev.clientX, ev.clientY); moveGhost(ev.clientX, ev.clientY); }
+      }
       function onUp(ev) {
         document.removeEventListener("pointermove", onMove);
         document.removeEventListener("pointerup", onUp);
-        ghost.remove();
-        var rect = boardEl.getBoundingClientRect();
-        if (ev.clientX >= rect.left && ev.clientX <= rect.right &&
-            ev.clientY >= rect.top && ev.clientY <= rect.bottom) {
-          var cellX = Math.floor((ev.clientX - rect.left) / CELL_PX);
-          var cellY = Math.floor((ev.clientY - rect.top) / CELL_PX);
-          addItem(state.layout, entry, cellX, cellY);
-          afterEdit();
+        if (ghost) ghost.remove();
+
+        if (dragging) {
+          var rect = boardEl.getBoundingClientRect();
+          if (ev.clientX >= rect.left && ev.clientX <= rect.right &&
+              ev.clientY >= rect.top && ev.clientY <= rect.bottom) {
+            var cellPx = cellSizePx();
+            var cellX = Math.floor((ev.clientX - rect.left) / cellPx);
+            var cellY = Math.floor((ev.clientY - rect.top) / cellPx);
+            if (!addItem(state.layout, entry, cellX, cellY)) {
+              flashInvalid();
+            }
+            afterEdit();
+          }
+        } else {
+          // click-to-place: drop into the first free slot
+          var slot = findFreeSlot(state.layout, entry);
+          if (slot) {
+            addItem(state.layout, entry, slot.x, slot.y);
+            afterEdit();
+          } else {
+            flashInvalid();
+          }
         }
       }
       document.addEventListener("pointermove", onMove);
@@ -629,27 +930,34 @@
     });
   }
 
-  function attachPlacedItemDrag(el, id) {
+  function flashInvalid() {
+    showNotice("No room for that item — try removing something or picking a larger room.");
+  }
+
+  function attachPlacedItemDrag(el, id, cellPx) {
     el.addEventListener("pointerdown", function (downEv) {
-      if (downEv.target !== el) return; // ignore clicks on the rotate/remove buttons
+      if (downEv.target !== el && downEv.target.tagName !== "SPAN") return; // ignore button clicks
       downEv.preventDefault();
       var rect = boardEl.getBoundingClientRect();
 
       function onMove(ev) {
-        var cellX = Math.floor((ev.clientX - rect.left) / CELL_PX);
-        var cellY = Math.floor((ev.clientY - rect.top) / CELL_PX);
+        var liveCellPx = cellSizePx();
+        var cellX = Math.floor((ev.clientX - rect.left) / liveCellPx);
+        var cellY = Math.floor((ev.clientY - rect.top) / liveCellPx);
         var item = findItem(state.layout, id);
         if (!item) return;
         var candidate = { x: cellX, y: cellY, w: item.w, h: item.h };
-        el.classList.toggle("invalid", !placementValid(state.layout, candidate, id));
-        el.style.left = (cellX * CELL_PX) + "px";
-        el.style.top = (cellY * CELL_PX) + "px";
+        el.style.left = (cellX * liveCellPx) + "px";
+        el.style.top = (cellY * liveCellPx) + "px";
+        el.classList.toggle("ring-2", !placementValid(state.layout, candidate, id));
+        el.classList.toggle("ring-red-400", !placementValid(state.layout, candidate, id));
       }
       function onUp(ev) {
         document.removeEventListener("pointermove", onMove);
         document.removeEventListener("pointerup", onUp);
-        var cellX = Math.floor((ev.clientX - rect.left) / CELL_PX);
-        var cellY = Math.floor((ev.clientY - rect.top) / CELL_PX);
+        var liveCellPx = cellSizePx();
+        var cellX = Math.floor((ev.clientX - rect.left) / liveCellPx);
+        var cellY = Math.floor((ev.clientY - rect.top) / liveCellPx);
         moveItem(state.layout, id, cellX, cellY);
         afterEdit();
       }
@@ -658,23 +966,68 @@
     });
   }
 
-  function moveGhost(ghost, clientX, clientY) {
-    ghost.style.left = (clientX - (ghost.offsetWidth || CELL_PX) / 2) + "px";
-    ghost.style.top = (clientY - (ghost.offsetHeight || CELL_PX) / 2) + "px";
+  /* =====================================================================
+   * Export modal
+   * ===================================================================*/
+
+  function openExportModal() {
+    var blueprint = buildBlueprint(state.layout);
+    modalSummaryEl.innerHTML = "";
+    var rows = [
+      ["Room size", blueprint.room.widthFt + " × " + blueprint.room.heightFt + " ft"],
+      ["Items placed", String(blueprint.items.length)],
+      ["Space utilization", Math.round(blueprint.utilization.pct) + "%"],
+      ["Estimated power", blueprint.power.totalWatts + " W / " + blueprint.power.outlets + " outlets"],
+      ["Spacing warnings", String(blueprint.spacing.pairs.length)],
+      ["Estimated total cost", "$" + blueprint.shoppingList.total.toLocaleString()]
+    ];
+    rows.forEach(function (pair) {
+      var dt = document.createElement("dt");
+      dt.className = "text-stone-400";
+      dt.textContent = pair[0];
+      var dd = document.createElement("dd");
+      dd.className = "text-right font-medium text-stone-800";
+      dd.textContent = pair[1];
+      modalSummaryEl.appendChild(dt);
+      modalSummaryEl.appendChild(dd);
+    });
+
+    modalEl.classList.remove("hidden");
+    modalEl.classList.add("is-open");
+    btnDownloadJsonEl.onclick = function () { downloadBlueprint(blueprint); };
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  function closeExportModal() {
+    modalEl.classList.add("hidden");
+    modalEl.classList.remove("is-open");
   }
 
   /* =====================================================================
-   * Entry point (docs/IMPLEMENTATION.md — system entry points)
+   * Entry point
    * ===================================================================*/
 
   document.getElementById("btn-reset").addEventListener("click", function () {
     state.layout = defaultLayout();
     afterEdit();
   });
+  btnExportEl.addEventListener("click", openExportModal);
+  document.getElementById("btn-modal-close").addEventListener("click", closeExportModal);
+  document.getElementById("btn-modal-done").addEventListener("click", closeExportModal);
+  document.getElementById("export-modal-backdrop").addEventListener("click", closeExportModal);
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") closeExportModal();
+  });
+
+  var resizeTimer = null;
+  window.addEventListener("resize", function () {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () { renderGrid(computeSpacing(state.layout)); }, 100);
+  });
 
   state.layout = restore();
   renderCatalog();
-  renderGrid();
+  afterEdit();
 })();
 </script>
 
