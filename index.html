@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpatialFlow — Micro-Office &amp; Studio Layout Planner</title>
+<meta name="description" content="SpatialFlow helps small teams and studios plan their micro-office layout in minutes, not meetings.">
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1f232c;
+    --border: #2a2f3a;
+    --text: #e8eaf0;
+    --text-dim: #9aa1b0;
+    --accent: #6ee7b7;
+    --accent-2: #60a5fa;
+    --danger: #f77f7f;
+    --cell: 32px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+  }
+  a { color: var(--accent-2); }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---- Hero ---- */
+  header.hero {
+    padding: 96px 0 72px;
+    background: radial-gradient(ellipse at top, #1a2332 0%, var(--bg) 60%);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { font-weight: 700; font-size: 20px; letter-spacing: -0.02em; }
+  .brand span { color: var(--accent); }
+  .hero h1 {
+    font-size: 44px;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin: 28px 0 16px;
+    max-width: 720px;
+  }
+  .hero p.lede {
+    font-size: 18px;
+    color: var(--text-dim);
+    max-width: 560px;
+    margin: 0 0 32px;
+  }
+  .btn {
+    display: inline-block;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .btn-primary { background: var(--accent); color: #08130e; }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-ghost { background: transparent; color: var(--text); border-color: var(--border); margin-left: 12px; }
+  .btn-ghost:hover { border-color: var(--text-dim); }
+
+  /* ---- Pitch / features ---- */
+  section.pitch, section.features { padding: 72px 0; }
+  section.pitch { border-bottom: 1px solid var(--border); }
+  h2.section-title { font-size: 28px; letter-spacing: -0.01em; margin: 0 0 12px; }
+  p.section-lede { color: var(--text-dim); max-width: 640px; margin: 0 0 40px; }
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+  }
+  .feature-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px;
+  }
+  .feature-card .icon { font-size: 24px; margin-bottom: 12px; }
+  .feature-card h3 { margin: 0 0 8px; font-size: 17px; }
+  .feature-card p { margin: 0; color: var(--text-dim); font-size: 14px; }
+
+  /* ---- Planner demo ---- */
+  section.demo { padding: 72px 0 96px; }
+  .demo-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .demo-toolbar .status { color: var(--text-dim); font-size: 13px; }
+  .demo-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 820px) {
+    .demo-layout { grid-template-columns: 1fr; }
+  }
+  .catalog {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    align-self: start;
+  }
+  .catalog h4 {
+    margin: 0 0 12px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+  }
+  .catalog-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    margin-bottom: 8px;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+  }
+  .catalog-item:active { cursor: grabbing; }
+  .catalog-item .swatch {
+    width: 18px; height: 18px; border-radius: 4px; flex: none;
+  }
+  .catalog-item .label { font-size: 13px; }
+  .catalog-item .dims { margin-left: auto; font-size: 11px; color: var(--text-dim); }
+
+  .board-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .board-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .board-controls button {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .board-controls button:hover { border-color: var(--text-dim); }
+  .board-controls button.danger { color: var(--danger); }
+
+  #board {
+    position: relative;
+    background:
+      linear-gradient(var(--panel-2) 1px, transparent 1px),
+      linear-gradient(90deg, var(--panel-2) 1px, transparent 1px);
+    background-size: var(--cell) var(--cell);
+    background-color: #12141a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  .placed-item {
+    position: absolute;
+    border-radius: 6px;
+    border: 1px solid rgba(0,0,0,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #08130e;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+  }
+  .placed-item:active { cursor: grabbing; }
+  .placed-item.invalid { outline: 2px solid var(--danger); }
+  .placed-item .item-controls {
+    position: absolute;
+    top: -12px;
+    right: -8px;
+    display: flex;
+    gap: 4px;
+  }
+  .placed-item .item-controls button {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font-size: 10px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="brand">Spatial<span>Flow</span></div>
+    <h1>Plan your micro-office or studio layout before you move a single desk.</h1>
+    <p class="lede">
+      SpatialFlow is a lightweight layout planner for small teams, co-working
+      studios and creative spaces — drag furniture onto a grid, see it fit,
+      save it, done. This page is a proof-of-concept: everything below runs
+      entirely in your browser.
+    </p>
+    <a href="#demo" class="btn btn-primary">Try the planner demo</a>
+    <a href="#features" class="btn btn-ghost">See features</a>
+  </div>
+</header>
+
+<section class="pitch" id="pitch">
+  <div class="wrap">
+    <h2 class="section-title">Built for spaces too small for enterprise floor-planning tools</h2>
+    <p class="section-lede">
+      Most office-planning software is built for facilities teams managing
+      whole buildings. SpatialFlow is built for the studio down the hall —
+      a handful of desks, a meeting table, maybe a plant that needs a window.
+      Sketch it, share it, ship it.
+    </p>
+  </div>
+</section>
+
+<section class="features" id="features">
+  <div class="wrap">
+    <h2 class="section-title">Why teams use SpatialFlow</h2>
+    <p class="section-lede">A few reasons this fits a micro-office better than a spreadsheet or a whiteboard photo.</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="icon">🪑</div>
+        <h3>Drag-and-drop layout</h3>
+        <p>Place desks, chairs, meeting tables and plants directly onto a scaled grid of your room.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📐</div>
+        <h3>Fit checking built in</h3>
+        <p>SpatialFlow won't let furniture overlap or hang off the edge of your room — the layout you see is a layout that actually fits.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">💾</div>
+        <h3>Your layout, saved locally</h3>
+        <p>Every change saves automatically to your browser. Close the tab, come back tomorrow, pick up where you left off.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">⚡</div>
+        <h3>No install, no account</h3>
+        <p>This proof-of-concept is a single page. No sign-up, no backend, nothing to configure.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="demo" id="demo">
+  <div class="wrap">
+    <h2 class="section-title">Try it — plan a small studio</h2>
+    <p class="section-lede">
+      Drag an item from the catalog onto the grid. Drag placed items to move
+      them, use the buttons on a placed item to rotate or remove it. Your
+      layout saves automatically to this browser.
+    </p>
+
+    <div class="demo-toolbar">
+      <div class="board-controls">
+        <button id="btn-reset">Reset layout</button>
+      </div>
+      <div class="status" id="status-line">Loading…</div>
+    </div>
+
+    <div class="demo-layout">
+      <div class="catalog">
+        <h4>Furniture</h4>
+        <div id="catalog-list"></div>
+      </div>
+      <div class="board-panel">
+        <div id="board"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    SpatialFlow is a fictional product built as a proof-of-concept demo. No data leaves your browser.
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* =====================================================================
+   * Dat — FurnitureCatalogEntry, RoomConfig, FurnitureItem, Layout,
+   * StoredLayoutJSON. See docs/site/ARCHITECTURE.md §3.
+   * ===================================================================*/
+
+  var CELL_PX = 32;
+  var STORAGE_KEY = "spatialflow.layout.v1";
+
+  /** @type {Array<{type:string,label:string,w:number,h:number,color:string}>} */
+  var FURNITURE_CATALOG = [
+    { type: "desk",    label: "Desk",         w: 3, h: 2, color: "#6ee7b7" },
+    { type: "chair",   label: "Chair",        w: 1, h: 1, color: "#60a5fa" },
+    { type: "table",   label: "Meeting table",w: 4, h: 2, color: "#fbbf24" },
+    { type: "plant",   label: "Plant",        w: 1, h: 1, color: "#34d399" },
+    { type: "shelf",   label: "Shelf",        w: 3, h: 1, color: "#f472b6" },
+    { type: "sofa",    label: "Sofa",         w: 3, h: 2, color: "#a78bfa" }
+  ];
+
+  function catalogEntry(type) {
+    for (var i = 0; i < FURNITURE_CATALOG.length; i++) {
+      if (FURNITURE_CATALOG[i].type === type) return FURNITURE_CATALOG[i];
+    }
+    return null;
+  }
+
+  function defaultLayout() {
+    return {
+      room: { widthCells: 20, heightCells: 12 },
+      items: []
+    };
+  }
+
+  var state = { layout: defaultLayout() };
+  var nextId = 1;
+
+  /* =====================================================================
+   * Composition rules (ARCHITECTURE.md §6): bounds + no-overlap invariants.
+   * ===================================================================*/
+
+  function withinBounds(layout, item) {
+    return item.x >= 0 && item.y >= 0 &&
+      item.x + item.w <= layout.room.widthCells &&
+      item.y + item.h <= layout.room.heightCells;
+  }
+
+  function overlaps(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x &&
+      a.y < b.y + b.h && a.y + a.h > b.y;
+  }
+
+  function hasCollision(layout, item, ignoreId) {
+    for (var i = 0; i < layout.items.length; i++) {
+      var other = layout.items[i];
+      if (other.id === ignoreId) continue;
+      if (overlaps(item, other)) return true;
+    }
+    return false;
+  }
+
+  function placementValid(layout, item, ignoreId) {
+    return withinBounds(layout, item) && !hasCollision(layout, item, ignoreId);
+  }
+
+  /* =====================================================================
+   * Trn — instantiate, addItem, moveItem, rotateItem, removeItem.
+   * See docs/site/ARCHITECTURE.md §5, §7.
+   * ===================================================================*/
+
+  function instantiate(entry, x, y) {
+    return {
+      id: "item-" + (nextId++),
+      type: entry.type,
+      x: x, y: y,
+      w: entry.w, h: entry.h,
+      rotation: 0
+    };
+  }
+
+  /** addItem : (Layout, FurnitureCatalogEntry, x, y) -> Layout (Total, clamped) */
+  function addItem(layout, entry, x, y) {
+    var item = instantiate(entry, x, y);
+    item.x = Math.max(0, Math.min(item.x, layout.room.widthCells - item.w));
+    item.y = Math.max(0, Math.min(item.y, layout.room.heightCells - item.h));
+    if (!placementValid(layout, item, null)) return layout; // reject silently, PoC-level
+    layout.items.push(item);
+    return layout;
+  }
+
+  /** moveItem : (Layout, id, x, y) -> Layout (Partial: no-op if invalid) */
+  function moveItem(layout, id, x, y) {
+    var item = findItem(layout, id);
+    if (!item) return layout;
+    var candidate = { x: x, y: y, w: item.w, h: item.h };
+    if (!placementValid(layout, candidate, id)) return layout;
+    item.x = x; item.y = y;
+    return layout;
+  }
+
+  /** rotateItem : (Layout, id) -> Layout (Partial: no-op if invalid after swap) */
+  function rotateItem(layout, id) {
+    var item = findItem(layout, id);
+    if (!item) return layout;
+    var swapped = { x: item.x, y: item.y, w: item.h, h: item.w };
+    if (!placementValid(layout, swapped, id)) return layout;
+    var tmp = item.w; item.w = item.h; item.h = tmp;
+    item.rotation = (item.rotation + 90) % 180;
+    return layout;
+  }
+
+  /** removeItem : (Layout, id) -> Layout (Partial: no-op if id absent) */
+  function removeItem(layout, id) {
+    var idx = -1;
+    for (var i = 0; i < layout.items.length; i++) {
+      if (layout.items[i].id === id) { idx = i; break; }
+    }
+    if (idx === -1) return layout;
+    layout.items.splice(idx, 1);
+    return layout;
+  }
+
+  function findItem(layout, id) {
+    for (var i = 0; i < layout.items.length; i++) {
+      if (layout.items[i].id === id) return layout.items[i];
+    }
+    return null;
+  }
+
+  /* =====================================================================
+   * serialize / deserialize (ARCHITECTURE.md §4, §9 Law 5: round-trip).
+   * ===================================================================*/
+
+  /** serialize : Layout -> StoredLayoutJSON (Total) */
+  function serialize(layout) {
+    return JSON.stringify(layout);
+  }
+
+  /** deserialize : StoredLayoutJSON -> Layout (Partial: falls back to default) */
+  function deserialize(json) {
+    try {
+      var parsed = JSON.parse(json);
+      if (!parsed || !parsed.room || !Array.isArray(parsed.items)) {
+        throw new Error("malformed layout");
+      }
+      var candidate = { room: parsed.room, items: [] };
+      for (var i = 0; i < parsed.items.length; i++) {
+        var it = parsed.items[i];
+        if (typeof it.x !== "number" || typeof it.y !== "number" ||
+            typeof it.w !== "number" || typeof it.h !== "number") {
+          throw new Error("malformed item");
+        }
+        if (!withinBounds(candidate, it) || hasCollision(candidate, it, it.id)) {
+          throw new Error("invariant violated");
+        }
+        candidate.items.push(it);
+        var maxId = parseInt(String(it.id).replace("item-", ""), 10);
+        if (!isNaN(maxId) && maxId >= nextId) nextId = maxId + 1;
+      }
+      return candidate;
+    } catch (e) {
+      return defaultLayout();
+    }
+  }
+
+  /* =====================================================================
+   * Trm — persist / restore. The only two functions touching localStorage.
+   * See docs/site/ARCHITECTURE.md §7, §9 Law 2.
+   * ===================================================================*/
+
+  /** persist : Layout(runtime) -> StoredLayoutJSON(localStorage) */
+  function persist(layout) {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, serialize(layout));
+    } catch (e) {
+      // storage unavailable (private mode, quota) — degrade silently, PoC-level
+    }
+  }
+
+  /** restore : StoredLayoutJSON(localStorage) -> Layout(runtime) */
+  function restore() {
+    var raw = null;
+    try {
+      raw = window.localStorage.getItem(STORAGE_KEY);
+    } catch (e) {
+      return defaultLayout();
+    }
+    if (!raw) return defaultLayout();
+    return deserialize(raw);
+  }
+
+  /* =====================================================================
+   * renderGrid : Layout -> DOM
+   * ===================================================================*/
+
+  var boardEl = document.getElementById("board");
+  var catalogListEl = document.getElementById("catalog-list");
+  var statusEl = document.getElementById("status-line");
+
+  function renderGrid() {
+    var layout = state.layout;
+    boardEl.style.width = (layout.room.widthCells * CELL_PX) + "px";
+    boardEl.style.height = (layout.room.heightCells * CELL_PX) + "px";
+    boardEl.innerHTML = "";
+
+    layout.items.forEach(function (item) {
+      var el = document.createElement("div");
+      el.className = "placed-item";
+      el.dataset.id = item.id;
+      el.style.left = (item.x * CELL_PX) + "px";
+      el.style.top = (item.y * CELL_PX) + "px";
+      el.style.width = (item.w * CELL_PX) + "px";
+      el.style.height = (item.h * CELL_PX) + "px";
+      var entry = catalogEntry(item.type);
+      el.style.background = entry ? entry.color : "#999";
+      el.textContent = entry ? entry.label : item.type;
+
+      var controls = document.createElement("div");
+      controls.className = "item-controls";
+
+      var rotateBtn = document.createElement("button");
+      rotateBtn.textContent = "⟳";
+      rotateBtn.title = "Rotate";
+      rotateBtn.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        rotateItem(state.layout, item.id);
+        afterEdit();
+      });
+
+      var removeBtn = document.createElement("button");
+      removeBtn.textContent = "×";
+      removeBtn.title = "Remove";
+      removeBtn.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        removeItem(state.layout, item.id);
+        afterEdit();
+      });
+
+      controls.appendChild(rotateBtn);
+      controls.appendChild(removeBtn);
+      el.appendChild(controls);
+
+      attachPlacedItemDrag(el, item.id);
+      boardEl.appendChild(el);
+    });
+
+    statusEl.textContent = layout.items.length + " item" +
+      (layout.items.length === 1 ? "" : "s") + " placed — autosaved to this browser";
+  }
+
+  function renderCatalog() {
+    catalogListEl.innerHTML = "";
+    FURNITURE_CATALOG.forEach(function (entry) {
+      var el = document.createElement("div");
+      el.className = "catalog-item";
+      el.draggable = false;
+
+      var swatch = document.createElement("div");
+      swatch.className = "swatch";
+      swatch.style.background = entry.color;
+
+      var label = document.createElement("span");
+      label.className = "label";
+      label.textContent = entry.label;
+
+      var dims = document.createElement("span");
+      dims.className = "dims";
+      dims.textContent = entry.w + "×" + entry.h;
+
+      el.appendChild(swatch);
+      el.appendChild(label);
+      el.appendChild(dims);
+      attachCatalogDrag(el, entry);
+      catalogListEl.appendChild(el);
+    });
+  }
+
+  function afterEdit() {
+    persist(state.layout);
+    renderGrid();
+  }
+
+  /* =====================================================================
+   * Pointer-driven drag: catalog -> board (addItem), and board -> board
+   * (moveItem). Native Pointer Events, no external library (design.md).
+   * ===================================================================*/
+
+  function attachCatalogDrag(el, entry) {
+    el.addEventListener("pointerdown", function (downEv) {
+      downEv.preventDefault();
+      var ghost = el.cloneNode(true);
+      ghost.style.position = "fixed";
+      ghost.style.zIndex = "1000";
+      ghost.style.pointerEvents = "none";
+      ghost.style.width = (entry.w * CELL_PX) + "px";
+      ghost.style.opacity = "0.85";
+      document.body.appendChild(ghost);
+      moveGhost(ghost, downEv.clientX, downEv.clientY);
+
+      function onMove(ev) { moveGhost(ghost, ev.clientX, ev.clientY); }
+      function onUp(ev) {
+        document.removeEventListener("pointermove", onMove);
+        document.removeEventListener("pointerup", onUp);
+        ghost.remove();
+        var rect = boardEl.getBoundingClientRect();
+        if (ev.clientX >= rect.left && ev.clientX <= rect.right &&
+            ev.clientY >= rect.top && ev.clientY <= rect.bottom) {
+          var cellX = Math.floor((ev.clientX - rect.left) / CELL_PX);
+          var cellY = Math.floor((ev.clientY - rect.top) / CELL_PX);
+          addItem(state.layout, entry, cellX, cellY);
+          afterEdit();
+        }
+      }
+      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointerup", onUp);
+    });
+  }
+
+  function attachPlacedItemDrag(el, id) {
+    el.addEventListener("pointerdown", function (downEv) {
+      if (downEv.target !== el) return; // ignore clicks on the rotate/remove buttons
+      downEv.preventDefault();
+      var rect = boardEl.getBoundingClientRect();
+
+      function onMove(ev) {
+        var cellX = Math.floor((ev.clientX - rect.left) / CELL_PX);
+        var cellY = Math.floor((ev.clientY - rect.top) / CELL_PX);
+        var item = findItem(state.layout, id);
+        if (!item) return;
+        var candidate = { x: cellX, y: cellY, w: item.w, h: item.h };
+        el.classList.toggle("invalid", !placementValid(state.layout, candidate, id));
+        el.style.left = (cellX * CELL_PX) + "px";
+        el.style.top = (cellY * CELL_PX) + "px";
+      }
+      function onUp(ev) {
+        document.removeEventListener("pointermove", onMove);
+        document.removeEventListener("pointerup", onUp);
+        var cellX = Math.floor((ev.clientX - rect.left) / CELL_PX);
+        var cellY = Math.floor((ev.clientY - rect.top) / CELL_PX);
+        moveItem(state.layout, id, cellX, cellY);
+        afterEdit();
+      }
+      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointerup", onUp);
+    });
+  }
+
+  function moveGhost(ghost, clientX, clientY) {
+    ghost.style.left = (clientX - (ghost.offsetWidth || CELL_PX) / 2) + "px";
+    ghost.style.top = (clientY - (ghost.offsetHeight || CELL_PX) / 2) + "px";
+  }
+
+  /* =====================================================================
+   * Entry point (docs/IMPLEMENTATION.md — system entry points)
+   * ===================================================================*/
+
+  document.getElementById("btn-reset").addEventListener("click", function () {
+    state.layout = defaultLayout();
+    afterEdit();
+  });
+
+  state.layout = restore();
+  renderCatalog();
+  renderGrid();
+})();
+</script>
+
+</body>
+</html>

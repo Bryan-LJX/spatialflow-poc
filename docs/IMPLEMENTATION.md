@@ -7,7 +7,7 @@
 
 | Component | Code root | Model | Code map |
 | --- | --- | --- | --- |
-| Site | `index.html` (planned) | [site/ARCHITECTURE.md](site/ARCHITECTURE.md) | [site/IMPLEMENTATION.md](site/IMPLEMENTATION.md) |
+| Site | `index.html` | [site/ARCHITECTURE.md](site/ARCHITECTURE.md) | [site/IMPLEMENTATION.md](site/IMPLEMENTATION.md) |
 
 ## Shared objects (one Dat, DataLocs in ≥2 components)
 
@@ -22,8 +22,8 @@ localStorage), see [site/ARCHITECTURE.md](site/ARCHITECTURE.md) §7.
 
 | Entry | Trn triggered | Code |
 | --- | --- | --- |
-| Load `index.html` in a browser | `renderGrid` (+ `restore` if a saved layout exists) | planned |
+| Load `index.html` in a browser | `renderGrid` (+ `restore` if a saved layout exists) | `index.html` bottom-of-script init block |
 
 ## Divergences (system-level)
 
-None yet — nothing is built.
+None.

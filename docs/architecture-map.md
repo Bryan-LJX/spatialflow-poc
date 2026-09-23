@@ -41,12 +41,12 @@ None — nothing in this system is placed at more than one `Loc` simultaneously.
 
 ## 5. Coherence checklist (§4.5 / §8) against the implementation
 
-- [ ] 1. Placement honesty — not yet checkable, no code
-- [ ] 2. Transmission well-typing — not yet checkable, no code
-- [ ] 3. Placement totality — not yet checkable, no code
-- [ ] 4. Dependency mediation — n/a, single component, no external deps
-- [ ] 5. Composition soundness — not yet checkable, no code
-- [ ] 6. runsAt is a relation — n/a, no placements
+- [x] 1. Placement honesty — no `Loc` claim beyond browser runtime + localStorage; matches code
+- [x] 2. Transmission well-typing — `persist`/`restore` only ever carry `StoredLayoutJSON`
+- [x] 3. Placement totality — every modeled `Dat`/`Trn` has a `built` row in `site/IMPLEMENTATION.md`
+- [x] 4. Dependency mediation — n/a, single component, no external deps
+- [x] 5. Composition soundness — bounds/overlap/round-trip verified manually, see `site/reviews/review-build-index-html.md`
+- [x] 6. runsAt is a relation — n/a, no placements
 
 ## 6. Modeling smells swept (§3)
 

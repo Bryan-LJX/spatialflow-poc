@@ -4,9 +4,12 @@
 
 | Component | State | Headline gap | In flight | Detail |
 | --- | --- | --- | --- | --- |
-| Site | ⬜ unbuilt | `index.html` not written yet | — | [site/STATUS.md](site/STATUS.md) |
+| Site | ✅ built | no automated tests, manual verification only | — | [site/STATUS.md](site/STATUS.md) |
 
 ## Cross-cutting
 
-Nothing built yet — first change is writing `index.html` (marketing + planner
-demo) per `docs/site/ARCHITECTURE.md`.
+`index.html` is built and manually verified (marketing content, interactive
+planner with drag/move/rotate/remove, bounds + no-overlap invariants,
+localStorage persistence). No automated test suite exists anywhere in the
+repo — acceptable for this PoC's scope, tracked as a named gap rather than a
+silent one.
