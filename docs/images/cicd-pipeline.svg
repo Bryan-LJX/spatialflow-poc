@@ -1,0 +1,102 @@
+<svg viewBox="0 0 1400 620" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#57606a"/>
+    </marker>
+  </defs>
+
+  <rect width="1400" height="620" fill="#ffffff"/>
+
+  <text x="700" y="34" text-anchor="middle" fill="#1f2328" font-size="24" font-weight="700">SpatialFlow — GitHub to Vercel deployment pipeline</text>
+
+  <!-- Phase headers -->
+  <text x="140" y="72" text-anchor="middle" fill="#0969da" font-size="14" font-weight="700">1. LOCAL DEV</text>
+  <text x="420" y="72" text-anchor="middle" fill="#0969da" font-size="14" font-weight="700">2. SOURCE CONTROL</text>
+  <text x="700" y="72" text-anchor="middle" fill="#0969da" font-size="14" font-weight="700">3. TRIGGER</text>
+  <text x="980" y="72" text-anchor="middle" fill="#0969da" font-size="14" font-weight="700">4. BUILD</text>
+  <text x="1260" y="72" text-anchor="middle" fill="#0969da" font-size="14" font-weight="700">5. DEPLOY</text>
+
+  <!-- Boxes row 1 -->
+  <rect x="45" y="90" width="190" height="70" rx="10" fill="#ddf4ff" stroke="#54aeff" stroke-width="1.5"/>
+  <text x="140" y="118" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">index.html /</text>
+  <text x="140" y="135" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">planner.html</text>
+  <text x="140" y="152" text-anchor="middle" font-size="11" fill="#57606a">edited locally</text>
+
+  <rect x="325" y="90" width="190" height="70" rx="10" fill="#ddf4ff" stroke="#54aeff" stroke-width="1.5"/>
+  <text x="420" y="115" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">GitHub repo</text>
+  <text x="420" y="132" text-anchor="middle" font-size="11" fill="#57606a">Bryan-LJX/spatialflow-poc</text>
+  <text x="420" y="148" text-anchor="middle" font-size="11" fill="#57606a">branch: master</text>
+
+  <rect x="605" y="90" width="190" height="70" rx="10" fill="#ddf4ff" stroke="#54aeff" stroke-width="1.5"/>
+  <text x="700" y="115" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">Vercel GitHub</text>
+  <text x="700" y="132" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">integration</text>
+  <text x="700" y="148" text-anchor="middle" font-size="11" fill="#57606a">webhook fires on push</text>
+
+  <rect x="885" y="90" width="190" height="70" rx="10" fill="#ddf4ff" stroke="#54aeff" stroke-width="1.5"/>
+  <text x="980" y="115" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">Vercel build</text>
+  <text x="980" y="132" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">container</text>
+  <text x="980" y="148" text-anchor="middle" font-size="11" fill="#57606a">runs vercel.json buildCommand</text>
+
+  <rect x="1165" y="90" width="190" height="70" rx="10" fill="#dafbe1" stroke="#4ac26b" stroke-width="1.5"/>
+  <text x="1260" y="115" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">Vercel Edge</text>
+  <text x="1260" y="132" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">Network (CDN)</text>
+  <text x="1260" y="148" text-anchor="middle" font-size="11" fill="#57606a">outputDirectory: "."</text>
+
+  <!-- arrows row 1 -->
+  <path d="M235,125 L323,125" stroke="#57606a" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+  <path d="M515,125 L603,125" stroke="#57606a" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+  <path d="M795,125 L883,125" stroke="#57606a" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+  <path d="M1075,125 L1163,125" stroke="#57606a" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+
+  <!-- Build detail callout -->
+  <rect x="885" y="180" width="190" height="60" rx="10" fill="#fff8c5" stroke="#d4a72c" stroke-width="1.5"/>
+  <text x="980" y="202" text-anchor="middle" font-size="11" fill="#1f2328">writes supabase-config.js</text>
+  <text x="980" y="218" text-anchor="middle" font-size="11" fill="#1f2328">from SUPABASE_URL /</text>
+  <text x="980" y="232" text-anchor="middle" font-size="11" fill="#1f2328">SUPABASE_ANON_KEY env vars</text>
+  <path d="M980,160 L980,178" stroke="#57606a" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+
+  <!-- Live URL -->
+  <rect x="1165" y="180" width="190" height="60" rx="10" fill="#dafbe1" stroke="#4ac26b" stroke-width="1.5"/>
+  <text x="1260" y="205" text-anchor="middle" font-size="12" font-weight="600" fill="#1f2328">spatialflow-poc</text>
+  <text x="1260" y="222" text-anchor="middle" font-size="12" font-weight="600" fill="#1f2328">.vercel.app</text>
+  <path d="M1260,160 L1260,178" stroke="#57606a" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+
+  <!-- down into runtime -->
+  <path d="M1260,240 L1260,280 L140,280 L140,318" stroke="#57606a" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+
+  <!-- Phase 6 header -->
+  <text x="700" y="345" text-anchor="middle" fill="#0969da" font-size="14" font-weight="700">6. RUNTIME — served to the visitor's browser</text>
+
+  <rect x="45" y="365" width="330" height="90" rx="10" fill="#fbefff" stroke="#c67ee0" stroke-width="1.5"/>
+  <text x="210" y="392" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">Styling / content CDNs</text>
+  <text x="210" y="415" text-anchor="middle" font-size="12" fill="#57606a">Tailwind CSS · Lucide icons</text>
+  <text x="210" y="435" text-anchor="middle" font-size="12" fill="#57606a">Space Grotesk (Google Fonts)</text>
+
+  <rect x="405" y="365" width="330" height="90" rx="10" fill="#fbefff" stroke="#c67ee0" stroke-width="1.5"/>
+  <text x="570" y="392" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">Scroll motion CDNs</text>
+  <text x="570" y="415" text-anchor="middle" font-size="12" fill="#57606a">Three.js · GSAP/ScrollTrigger</text>
+  <text x="570" y="435" text-anchor="middle" font-size="12" fill="#57606a">Lenis (index.html only)</text>
+
+  <rect x="765" y="365" width="330" height="90" rx="10" fill="#fbefff" stroke="#c67ee0" stroke-width="1.5"/>
+  <text x="930" y="392" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">Supabase JS SDK</text>
+  <text x="930" y="415" text-anchor="middle" font-size="12" fill="#57606a">client-side, direct calls</text>
+  <text x="930" y="435" text-anchor="middle" font-size="12" fill="#57606a">using the public anon key</text>
+
+  <!-- down to backend -->
+  <path d="M930,455 L930,490" stroke="#57606a" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+
+  <text x="1030" y="510" text-anchor="middle" fill="#0969da" font-size="14" font-weight="700">7. BACKEND SERVICES</text>
+
+  <rect x="765" y="525" width="150" height="70" rx="10" fill="#ffe8e5" stroke="#f78166" stroke-width="1.5"/>
+  <text x="840" y="553" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">Supabase</text>
+  <text x="840" y="570" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">Auth</text>
+  <text x="840" y="587" text-anchor="middle" font-size="10" fill="#57606a">sign-up / login</text>
+
+  <rect x="945" y="525" width="150" height="70" rx="10" fill="#ffe8e5" stroke="#f78166" stroke-width="1.5"/>
+  <text x="1020" y="550" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">Supabase</text>
+  <text x="1020" y="567" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">Postgres + RLS</text>
+  <text x="1020" y="586" text-anchor="middle" font-size="10" fill="#57606a">layouts table</text>
+
+  <path d="M900,560 L943,560" stroke="#57606a" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+  <path d="M930,455 L840,523" stroke="#57606a" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+</svg>

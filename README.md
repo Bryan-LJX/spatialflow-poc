@@ -82,45 +82,7 @@ gitignored and never gets committed.
 Every push to `master` ships automatically — no manual deploy step, no
 server to log into.
 
-```mermaid
-flowchart LR
-    subgraph dev["Local development"]
-        A[index.html / planner.html] --> B[git commit]
-    end
-
-    subgraph gh["Source control"]
-        C[(GitHub repo\nBryan-LJX/spatialflow-poc)]
-    end
-
-    subgraph trigger["Trigger"]
-        D[Vercel GitHub integration\nwebhook on push]
-    end
-
-    subgraph build["Build"]
-        E[Vercel build container\nruns vercel.json buildCommand]
-        F[Writes supabase-config.js\nfrom env vars]
-    end
-
-    subgraph deploy["Deploy"]
-        G[Vercel Edge Network / CDN\noutputDirectory: .]
-        H([spatialflow-poc.vercel.app])
-    end
-
-    subgraph runtime["Runtime (browser)"]
-        I[Tailwind CSS / Lucide / Google Fonts]
-        J[Three.js / GSAP / Lenis]
-        K[Supabase JS SDK]
-    end
-
-    subgraph backend["Backend services"]
-        L[(Supabase Auth)]
-        M[(Supabase Postgres + RLS)]
-    end
-
-    B --> C --> D --> E --> F --> G --> H --> I & J & K
-    K --> L
-    K --> M
-```
+![CI/CD pipeline: local dev pushes to GitHub, which webhooks Vercel to build (injecting Supabase env vars) and deploy to its Edge Network, which serves the browser runtime that talks to Supabase Auth and Postgres](docs/images/cicd-pipeline.svg)
 
 **What happens on `git push`:**
 
