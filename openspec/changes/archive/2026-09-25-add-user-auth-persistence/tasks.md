@@ -95,13 +95,13 @@
 - [x] 5.3 Re-run the key spec scenarios against the production URL:
       register, log in, save a layout, reload, log out, confirm signed-out
       fallback — not just against localhost
-- [ ] 5.4 Record the production URL and the Vercel/Supabase project
+- [x] 5.4 Record the production URL and the Vercel/Supabase project
       identifiers in the session log's Live handoff state table
 
 ## 6. Closeout
 
-- [ ] 6.1 Run `supercharge-drift` (or `scripts/drift-check.sh`) and fix or
+- [x] 6.1 Run `supercharge-drift` (or `scripts/drift-check.sh`) and fix or
       record every dead row before archiving
-- [ ] 6.2 Confirm all scenarios in `specs/user-auth/spec.md` and
+- [x] 6.2 Confirm all scenarios in `specs/user-auth/spec.md` and
       `specs/layout-persistence/spec.md` have been verified live (cross-check
       against tasks 2.2-2.5, 3.2-3.6, 5.3) before archiving
