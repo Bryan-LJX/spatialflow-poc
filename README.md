@@ -98,15 +98,3 @@ morphisms, locations, transmissions) rather than free-form prose — see
 is, and [`docs/site/STATUS.md`](docs/site/STATUS.md) for what's built,
 verified, and outstanding.
 
-## Known gaps
-
-- No automated test suite — all invariants and calculations are verified
-  manually (see `docs/site/reviews/`).
-- No account-recovery flow (password reset) or email verification beyond
-  Supabase's defaults — minimum-viable auth for a proof of concept.
-- An anonymous, signed-out layout does not carry over into a new account
-  once you sign up.
-- `index.html` and `planner.html` duplicate their nav/footer/auth-modal
-  *markup* (only the auth/session *code* is shared, via
-  `assets/js/site-auth.js`) — an accepted consequence of having no build
-  step or templating.
