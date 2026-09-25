@@ -1,35 +1,44 @@
 # SpatialFlow
 
 A proof-of-concept marketing site for a fictional micro-office / studio
-layout planner product. It's a single static `index.html` (no build step,
-no framework) combining a cinematic, scroll-driven marketing shell with a
-fully interactive room-planning tool, plus optional user accounts for
-saving layouts across devices.
+layout planner product. It's two static pages (no build step, no framework):
+`index.html`, a cinematic, scroll-driven marketing shell, and `planner.html`,
+a fully interactive room-planning tool it links to — plus optional user
+accounts for saving layouts across devices.
 
 **Live**: https://spatialflow-poc.vercel.app/
 
 ## What it does
 
-- **Marketing shell** — a dark, jeskojets.com-inspired scroll experience:
-  a portal hero with a scroll zoom-through, a per-section palette journey,
-  an accordion, a spec table, and a dark finale.
-- **Interactive planner** — drag furniture onto a scaled floor plan and get
-  live feedback:
+- **Marketing shell** (`index.html`) — a dark, jeskojets.com-inspired scroll
+  experience: a portal hero with a real WebGL scene and a GSAP-pinned scroll
+  zoom-through, Lenis-smoothed scrolling throughout, a per-section palette
+  journey, a scroll-driven parallax glide on the showcase chair, an
+  accordion, a spec table, and a dark finale.
+- **Interactive planner** (`planner.html`) — drag furniture onto a scaled
+  floor plan and get live feedback:
   - Hard invariants: items can't leave the room or overlap.
   - Soft invariant: a clearance warning for furniture placed too close
     together (non-blocking).
   - Live utilization %, estimated power draw and outlet count, an itemized
     shopping list with running total, and a JSON blueprint export.
-- **Accounts (optional)** — sign up or log in with email/password to save
-  your layout to your account and pick it up from any device. Without an
-  account, the planner still works and saves your layout locally to that
-  one browser.
+- **Accounts (optional)** — sign up or log in with email/password (from
+  either page) to save your layout to your account and pick it up from any
+  device. Without an account, the planner still works and saves your layout
+  locally to that one browser.
 
 ## Tech stack
 
 - **Frontend**: plain HTML/CSS/JS, Tailwind CSS (CDN) for styling, Lucide
   for icons, Space Grotesk (Google Fonts) for display type. No bundler, no
-  package.json, no framework.
+  package.json, no framework — everything is loaded from CDNs, including
+  ES modules resolved via a `<script type="importmap">` (`index.html`,
+  `assets/js/`) so `import` statements work with no build step.
+- **Scroll motion** (`index.html` only): [Three.js](https://threejs.org)
+  for the hero's WebGL scene, [GSAP](https://gsap.com) + ScrollTrigger for
+  pinning/scrubbing/reveal timelines, and [Lenis](https://lenis.dev) for
+  smooth scrolling — all free/MIT, all CDN-delivered. `planner.html` doesn't
+  load any of this, so planner-only visitors don't pay for it.
 - **Auth + database**: [Supabase](https://supabase.com) — Auth for
   email/password sign-up and login, Postgres for per-user layout storage.
   The browser talks to Supabase directly via its public anon key; a Row
@@ -71,10 +80,16 @@ gitignored and never gets committed.
 ## Project structure
 
 ```
-index.html    — the entire site: markup, styles, and app logic
-images/       — marketing and furniture-catalog images (see CREDITS.md)
-docs/         — the categorical architecture model and its status
-openspec/     — change proposals/specs/designs/tasks (OpenSpec workflow)
+index.html          — the marketing shell: markup, styles, and app logic
+planner.html         — the Micro-Office Layout Builder, its own page
+assets/js/
+  site-auth.js       — shared ES module: sign-up/sign-in/sign-out/session,
+                       imported by both index.html and planner.html
+  marketing-scene.js — index.html-only: Three.js hero scene, Lenis, GSAP/
+                       ScrollTrigger reveal and showcase-chair animations
+images/              — marketing and furniture-catalog images (see CREDITS.md)
+docs/                — the categorical architecture model and its status
+openspec/            — change proposals/specs/designs/tasks (OpenSpec workflow)
 ```
 
 This project documents its own architecture as a formal model (objects,
@@ -91,3 +106,7 @@ verified, and outstanding.
   Supabase's defaults — minimum-viable auth for a proof of concept.
 - An anonymous, signed-out layout does not carry over into a new account
   once you sign up.
+- `index.html` and `planner.html` duplicate their nav/footer/auth-modal
+  *markup* (only the auth/session *code* is shared, via
+  `assets/js/site-auth.js`) — an accepted consequence of having no build
+  step or templating.
