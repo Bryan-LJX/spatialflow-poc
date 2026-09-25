@@ -181,3 +181,65 @@ None — this is the only component in the system.
   `compute*` function must be a pure function of `Layout.items` with no
   hidden state — verified by construction (no `compute*` function reads or
   writes anything but its `Layout` argument).
+
+## 10. Presentation layer (ambient, not modeled objects)
+
+Added by the `redesign-jesko-aesthetic` change: a cinematic, scroll-driven
+marketing shell (dark portal hero with a scroll zoom-through, a per-section
+palette journey, oversized display type, a split headline, an accordion, a
+spec table, and a near-black finale) wrapped around the **unchanged** planner.
+This is deliberately **not** part of the category: scene/scroll/reveal/
+accordion state is ephemeral DOM/CSS state — never serialized, never read by
+any `compute*`, never affecting an invariant. It is ambient same-`Loc` `Trn`
+(browser runtime → browser runtime DOM), not new `Dat`.
+
+- **`initScrollReveal`** (`index.html:initScrollReveal`) — reveals
+  `[data-reveal]` marketing nodes via `IntersectionObserver` (toggling
+  `.is-revealed`); `prefers-reduced-motion` reveals all immediately. **Note:**
+  a CSS `animation-timeline: view()` path was tried and removed — elements in
+  the final screenful never complete their `entry` range before the page's
+  scroll limit, leaving the finale/summary permanently hidden. IO fires on a
+  visibility threshold, so reveals complete everywhere.
+- **`initHeroZoom`** (`index.html:initHeroZoom`) — a rAF-throttled scroll
+  handler that scales + fades the hero portal (the jesko "zoom through the
+  window" effect). **Note:** CSS `animation-timeline: scroll()` proved inert
+  in the target engine, so this is driven by JS over a legible `scale(1)`
+  baseline; it is pure progressive enhancement and no-ops under
+  `prefers-reduced-motion`. (Both CSS scroll-driven timelines — `scroll()` and
+  `view()` — proved unreliable here; JS drives the motion instead.)
+- **`initAccordion`** (`index.html:initAccordion`) — toggles `.is-open` on
+  `.acc-item` advantage rows.
+- **`initNavContrast`** (`index.html:initNavContrast`) — a scroll-spy that
+  toggles `#site-nav.nav-dark` (dark nav text) when a `data-nav="light"`
+  section is under the fixed nav, defaulting to white text over dark sections.
+  Replaced a `mix-blend-mode: difference` nav that was illegible over the
+  light sections. Colour-only, no motion.
+
+**Planner-fence invariant.** None of these ever run inside `#planner`'s
+dynamically re-rendered subtree (`#room-presets`, `#catalog-list`, `#board`,
+the metrics `<aside>`). Enforced structurally: `[data-reveal]` is never
+authored onto planner-internal elements (only onto the planner's *section
+heading*, which is marketing framing), and the reveal/scene functions read
+scroll/intersection signals and write `class`/`style` only — they never touch
+`state.layout`. The planner is reframed as a bright "studio workbench" panel
+(a deliberate light beat in the palette journey); only its section
+container/heading changed, its internal markup and classes are unchanged.
+
+**Palette journey.** Full-bleed sections each own their background and text
+color, grounded in the existing `wood`/`stone` tokens plus a new `espresso`
+scale: espresso hero → cream manifesto/advantages → gold showcase → light
+workbench (planner) → dark blueprint summary → near-black finale.
+
+**Furniture catalog images.** `FurnitureCatalogEntry` carries an `image`
+attribute (a path into `images/furniture/`), rendered as `<img>` in the
+catalog swatch, on placed canvas items + the drag-ghost, and in shopping-list
+rows, each with an `onerror` fallback to the Lucide icon + colour. It is
+resolved at render time via the existing `catalogEntry(type)` lookup (exactly
+like `color`): no new `Dat`, no `FurnitureItem`/`Layout`/`StoredLayoutJSON`
+shape change, no effect on any `compute*` or invariant.
+
+- **Law 1 (placement honesty) holds:** no new `Loc` — the cinematic layer,
+  the Google-Fonts stylesheet, and the local `images/` assets (hero, showcase,
+  and `images/furniture/`) are all fetched once by the existing browser
+  runtime and carry no `Layout` data, exactly like the Tailwind/Lucide CDN
+  assets (§9).

@@ -6,6 +6,10 @@
 <title>SpatialFlow — Micro-Office &amp; Studio Layout Planner</title>
 <meta name="description" content="SpatialFlow helps small teams and studios plan their micro-office layout in minutes — drag furniture onto a scaled floor plan, see real-time cost, power and spacing, export a blueprint.">
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = {
@@ -23,13 +27,19 @@
             700: '#714829',
             800: '#5c3a22',
             900: '#4a2f1c'
+          },
+          espresso: {
+            900: '#1a1310',
+            800: '#241a15',
+            700: '#31241c'
           }
         },
         boxShadow: {
           soft: '0 2px 10px -2px rgba(41,37,33,0.06), 0 12px 28px -10px rgba(41,37,33,0.10)'
         },
         fontFamily: {
-          sans: ['ui-sans-serif','system-ui','-apple-system','Segoe UI','Roboto','Helvetica Neue','Arial','sans-serif']
+          sans: ['ui-sans-serif','system-ui','-apple-system','Segoe UI','Roboto','Helvetica Neue','Arial','sans-serif'],
+          display: ['"Space Grotesk"','ui-sans-serif','system-ui','sans-serif']
         }
       }
     }
@@ -41,6 +51,7 @@
   html { scroll-behavior: smooth; }
   body { -webkit-font-smoothing: antialiased; }
 
+  /* ---- Planner-critical styles (unchanged from baseline) ---- */
   #board {
     background-image:
       linear-gradient(#e7e2da 1px, transparent 1px),
@@ -79,80 +90,289 @@
 
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* ===================================================================
+     Cinematic redesign (redesign-jesko-aesthetic).
+     Presentation layer only — never applied inside #planner's dynamic
+     subtree. See docs/site/ARCHITECTURE.md §10.
+  ==================================================================== */
+
+  .font-display { font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif; }
+
+  /* Fixed-nav contrast: default light (white) text for dark sections;
+     `.nav-dark` (set by initNavContrast over light sections) flips to dark. */
+  #site-nav.nav-dark { color: #1c1917; }
+
+  /* Oversized cinematic display type */
+  .display-xl {
+    font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 500;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    font-size: clamp(3rem, 11vw, 9rem);
+  }
+  .display-lg {
+    font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 500;
+    line-height: 1.0;
+    letter-spacing: -0.02em;
+    font-size: clamp(2.25rem, 6.5vw, 5rem);
+  }
+
+  /* Scroll-reveal: hidden resting state → `.is-revealed` (toggled by the
+     IntersectionObserver in initScrollReveal). A CSS `animation-timeline:
+     view()` path was tried and removed — elements in the final screenful
+     never complete their `entry` range (the page runs out of scroll), leaving
+     the finale/summary permanently hidden. IO fires on visibility threshold,
+     so reveals complete everywhere. */
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity .7s cubic-bezier(.22,.61,.36,1), transform .7s cubic-bezier(.22,.61,.36,1);
+  }
+  [data-reveal].is-revealed { opacity: 1; transform: translateY(0); }
+  [data-reveal][data-reveal-delay="1"] { transition-delay: .08s; }
+  [data-reveal][data-reveal-delay="2"] { transition-delay: .16s; }
+  [data-reveal][data-reveal-delay="3"] { transition-delay: .24s; }
+
+  /* Hero portal: rounded viewport that scroll-zooms toward the viewer.
+     Progressive enhancement — JS adds .hero-zoom-on only after confirming
+     the scroll() timeline actually drives the transform (see initHeroZoom). */
+  .hero-portal {
+    transform: scale(1);
+    transform-origin: center 42%;
+    will-change: transform;
+  }
+  /* The scroll-linked zoom is driven by JS (initHeroZoom): CSS
+     `animation-timeline: scroll()` proved inert in the target engine, so a
+     rAF-throttled scroll handler sets the transform directly. The hero is
+     fully legible at scale(1) if that handler never runs. */
+
+  /* Floating pill CTA (persistent, bottom-center) */
+  .floating-cta {
+    position: fixed;
+    left: 50%;
+    bottom: clamp(1rem, 4vh, 2.25rem);
+    transform: translateX(-50%);
+    z-index: 45;
+  }
+
+  /* Accordion */
+  .acc-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .35s ease;
+  }
+  .acc-item.is-open .acc-panel { max-height: 340px; }
+  .acc-item.is-open .acc-icon { transform: rotate(45deg); }
+  .acc-icon { transition: transform .3s ease; }
+
+  /* Giant faded finale word */
+  .finale-word {
+    font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    font-size: clamp(4rem, 22vw, 20rem);
+    line-height: 0.8;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(226,203,168,0.22);
+    text-stroke: 1px rgba(226,203,168,0.22);
+    user-select: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    [data-reveal] {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+      animation: none !important;
+    }
+    .hero-zoom-on .hero-portal { animation: none !important; transform: scale(1) !important; }
+  }
 </style>
 </head>
 
-<body class="bg-stone-50 text-stone-800 font-sans antialiased">
+<body class="bg-espresso-900 text-stone-100 font-sans antialiased">
 
 <!-- ===================================================================
-     Header
+     Fixed minimal nav
 ==================================================================== -->
-<header class="sticky top-0 z-40 border-b border-stone-200 bg-stone-50/85 backdrop-blur">
-  <div class="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-    <div class="flex items-center gap-2 font-semibold tracking-tight text-lg">
-      <i data-lucide="layout-grid" class="w-5 h-5 text-wood-600"></i>
-      Spatial<span class="text-wood-600">Flow</span>
+<header class="fixed top-0 inset-x-0 z-50">
+  <div id="site-nav" class="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between text-white transition-colors duration-300">
+    <div class="font-display font-medium tracking-tight text-lg">
+      Spatial<span class="font-light">Flow</span>
     </div>
-    <nav class="hidden sm:flex items-center gap-8 text-sm text-stone-600">
-      <a href="#planner" class="hover:text-stone-900 transition-colors">Planner</a>
-      <a href="#summary" class="hover:text-stone-900 transition-colors">Blueprint</a>
+    <nav class="hidden sm:flex items-center gap-8 text-xs uppercase tracking-[0.15em] font-medium">
+      <a href="#manifesto" class="hover:opacity-60 transition-opacity">Studio</a>
+      <a href="#showcase" class="hover:opacity-60 transition-opacity">Fleet</a>
+      <a href="#planner" class="hover:opacity-60 transition-opacity">Planner</a>
+      <a href="#summary" class="hover:opacity-60 transition-opacity">Blueprint</a>
     </nav>
-    <a href="#planner" id="header-cta"
-       class="inline-flex items-center gap-1.5 rounded-lg bg-stone-900 text-white text-sm font-medium px-4 py-2 hover:bg-wood-700 transition-colors">
-      Launch Studio Planner
-    </a>
+    <div class="hidden sm:block text-xs uppercase tracking-[0.15em]">Design&nbsp;·&nbsp;In&nbsp;Browser</div>
   </div>
 </header>
 
+<!-- Persistent floating pill CTA -->
+<a href="#planner" class="floating-cta group inline-flex items-center gap-2 rounded-full bg-white text-stone-900 text-sm font-medium pl-5 pr-2 py-2 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.6)] hover:bg-wood-50 transition-colors">
+  Start Planning
+  <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-wood-600 text-white group-hover:bg-wood-700 transition-colors">
+    <i data-lucide="arrow-down" class="w-4 h-4"></i>
+  </span>
+</a>
+
 <!-- ===================================================================
-     Landing hero
+     Cinematic hero — portal into the space, with scroll zoom-through
 ==================================================================== -->
-<section class="relative overflow-hidden">
-  <div class="absolute inset-0 bg-gradient-to-b from-wood-50 via-stone-50 to-stone-50 -z-10"></div>
-  <div class="max-w-5xl mx-auto px-5 sm:px-8 pt-24 pb-20 text-center">
-    <span class="inline-flex items-center gap-1.5 rounded-full border border-wood-200 bg-white px-3 py-1 text-xs font-medium text-wood-700 tracking-wide uppercase shadow-soft">
-      <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-      Small-space productivity pods
-    </span>
+<section data-nav="dark" class="relative min-h-screen overflow-hidden bg-gradient-to-b from-espresso-800 via-espresso-900 to-espresso-900">
+  <!-- vignette -->
+  <div class="pointer-events-none absolute inset-0" style="background:radial-gradient(120% 90% at 50% 35%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 100%);"></div>
 
-    <h1 class="mt-6 text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-stone-900 leading-[1.1]">
-      Design your micro-office<br class="hidden sm:block"> before you buy a single desk.
-    </h1>
+  <!-- Portal viewport (scroll-zooms toward the viewer) -->
+  <div class="absolute inset-0 flex items-center justify-center">
+    <div class="hero-portal relative w-[min(72vw,340px)] sm:w-[min(46vw,420px)] aspect-[3/4] rounded-[2.75rem] overflow-hidden ring-1 ring-white/15 shadow-[0_40px_120px_-20px_rgba(0,0,0,0.8),inset_0_0_0_10px_rgba(255,255,255,0.06)]">
+      <img src="images/hero-workspace.jpg" alt="A calm, warmly lit workspace seen through a portal"
+           class="absolute inset-0 w-full h-full object-cover"
+           onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(160deg,#31241c,#1a1310)';">
+      <div class="absolute inset-0" style="background:linear-gradient(180deg,rgba(0,0,0,0.05),rgba(0,0,0,0.35));"></div>
+      <span class="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center font-display text-white/85 text-lg tracking-[0.3em] uppercase">SpatialFlow</span>
+    </div>
+  </div>
 
-    <p class="mt-6 text-lg text-stone-600 max-w-2xl mx-auto leading-relaxed">
-      SpatialFlow turns a spare room, garage corner or studio nook into a
-      custom productivity pod. Pick a real room size, drop in ergonomic
-      furniture and acoustic gear, and watch cost, power and spacing update
-      instantly — entirely in your browser.
-    </p>
+  <!-- Overlaid oversized headline, flanking the portal -->
+  <div class="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 min-h-screen">
+    <h1 class="display-xl text-white absolute left-5 sm:left-8 top-[16vh] pointer-events-none">We shape</h1>
+    <h1 class="display-xl text-white absolute right-5 sm:right-8 bottom-[20vh] text-right pointer-events-none">space</h1>
 
-    <div class="mt-9 flex flex-col sm:flex-row items-center justify-center gap-4">
-      <a href="#planner" id="hero-cta"
-         class="inline-flex items-center gap-2 rounded-lg bg-wood-600 text-white font-medium px-6 py-3.5 shadow-soft hover:bg-wood-700 active:scale-[0.98] transition-all">
-        Launch Studio Planner
-        <i data-lucide="move-down" class="w-4 h-4"></i>
-      </a>
-      <a href="#summary"
-         class="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white text-stone-700 font-medium px-6 py-3.5 hover:border-stone-400 hover:bg-stone-100 transition-colors">
-        See the blueprint output
-      </a>
+    <div class="absolute left-5 sm:left-8 bottom-[8vh] max-w-xs pointer-events-none">
+      <p class="font-display text-base text-white/90 leading-snug">Your space,<br>designed first.</p>
+      <div class="my-3 h-px w-10 bg-white/30"></div>
+      <p class="text-xs text-white/60 leading-relaxed">Every layout is planned around real dimensions, power and clearance — so you commit to furniture only once it fits.</p>
     </div>
 
-    <div class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
-      <div class="rounded-xl border border-stone-200 bg-white p-5 shadow-soft">
-        <i data-lucide="ruler" class="w-5 h-5 text-wood-600 mb-3"></i>
-        <h3 class="font-medium text-stone-900">Real room dimensions</h3>
-        <p class="mt-1 text-sm text-stone-500">Plan against an actual 8×10 or 10×12 ft footprint, not a guess.</p>
+    <div class="absolute right-5 sm:right-8 bottom-[8vh] hidden sm:flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-white/60">
+      <i data-lucide="chevron-down" class="w-4 h-4"></i> Scroll to enter the studio
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================
+     Manifesto — cream, scroll-revealed value points
+==================================================================== -->
+<section id="manifesto" data-nav="light" class="bg-wood-50 text-stone-900">
+  <div class="max-w-6xl mx-auto px-5 sm:px-8 py-28 sm:py-40">
+    <p data-reveal class="text-xs uppercase tracking-[0.25em] text-wood-600 font-medium">A better way to plan a room</p>
+    <h2 data-reveal data-reveal-delay="1" class="display-lg mt-6 max-w-4xl">Buy the desk after it fits, not before.</h2>
+    <p data-reveal data-reveal-delay="2" class="mt-8 max-w-2xl text-lg text-stone-600 leading-relaxed">
+      SpatialFlow turns a spare room, garage corner or studio nook into a custom
+      productivity pod — planned to the foot, priced to the dollar, before you
+      spend anything.
+    </p>
+
+    <div class="mt-20 grid grid-cols-1 sm:grid-cols-3 gap-x-10 gap-y-12">
+      <div data-reveal>
+        <div class="text-5xl font-display font-light text-wood-500">01</div>
+        <h3 class="mt-4 font-display text-xl text-stone-900">Real room dimensions</h3>
+        <p class="mt-2 text-sm text-stone-500 leading-relaxed">Plan against an actual 8×10 or 10×12 ft footprint, not a guess.</p>
       </div>
-      <div class="rounded-xl border border-stone-200 bg-white p-5 shadow-soft">
-        <i data-lucide="zap" class="w-5 h-5 text-wood-600 mb-3"></i>
-        <h3 class="font-medium text-stone-900">Live power &amp; spacing</h3>
-        <p class="mt-1 text-sm text-stone-500">Outlet counts and clearance warnings update as you place items.</p>
+      <div data-reveal data-reveal-delay="1">
+        <div class="text-5xl font-display font-light text-wood-500">02</div>
+        <h3 class="mt-4 font-display text-xl text-stone-900">Live power &amp; spacing</h3>
+        <p class="mt-2 text-sm text-stone-500 leading-relaxed">Outlet counts and clearance warnings update as you place each item.</p>
       </div>
-      <div class="rounded-xl border border-stone-200 bg-white p-5 shadow-soft">
-        <i data-lucide="shopping-cart" class="w-5 h-5 text-wood-600 mb-3"></i>
-        <h3 class="font-medium text-stone-900">Instant shopping list</h3>
-        <p class="mt-1 text-sm text-stone-500">Export a priced blueprint the moment your layout feels right.</p>
+      <div data-reveal data-reveal-delay="2">
+        <div class="text-5xl font-display font-light text-wood-500">03</div>
+        <h3 class="mt-4 font-display text-xl text-stone-900">Instant shopping list</h3>
+        <p class="mt-2 text-sm text-stone-500 leading-relaxed">Export a priced blueprint the moment your layout feels right.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================
+     Showcase — split headline around a featured object (warm gold)
+==================================================================== -->
+<section id="showcase" data-nav="light" class="relative overflow-hidden bg-gradient-to-b from-wood-200 to-wood-300 text-stone-900">
+  <div class="relative max-w-7xl mx-auto px-5 sm:px-8 py-28 sm:py-36">
+    <h2 class="display-lg sm:hidden text-center mb-8">Design in luxe</h2>
+    <div class="relative flex items-center justify-center">
+      <img src="images/showcase-chair.png" alt="An ergonomic lounge chair"
+           class="relative z-10 w-[min(60vw,420px)]"
+           onerror="this.style.display='none';">
+      <h2 class="display-xl hidden sm:flex absolute inset-x-0 top-1/2 -translate-y-1/2 items-center justify-between pointer-events-none">
+        <span>Design</span><span>in&nbsp;luxe</span>
+      </h2>
+    </div>
+    <div class="mt-10 sm:mt-16 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-6 items-end">
+      <p data-reveal class="max-w-md text-stone-700 leading-relaxed">
+        Furniture that moves with you. Every catalog piece carries real
+        footprint, cost and power draw — so a layout that looks right is also
+        one that works.
+      </p>
+      <div data-reveal data-reveal-delay="1" class="text-right">
+        <div class="text-xs uppercase tracking-[0.2em] text-stone-600">Featured</div>
+        <div class="font-display text-2xl">Lounge&nbsp;·&nbsp;Ergo Series</div>
+      </div>
+    </div>
+
+    <!-- Spec table (static featured-piece specification) -->
+    <dl data-reveal class="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-px bg-stone-900/10 rounded-2xl overflow-hidden">
+      <div class="bg-wood-100/70 p-5">
+        <dt class="text-xs uppercase tracking-[0.15em] text-stone-500">Footprint</dt>
+        <dd class="mt-1 font-display text-xl text-stone-900">1 × 1 ft</dd>
+      </div>
+      <div class="bg-wood-100/70 p-5">
+        <dt class="text-xs uppercase tracking-[0.15em] text-stone-500">Clearance</dt>
+        <dd class="mt-1 font-display text-xl text-stone-900">1 ft</dd>
+      </div>
+      <div class="bg-wood-100/70 p-5">
+        <dt class="text-xs uppercase tracking-[0.15em] text-stone-500">Power draw</dt>
+        <dd class="mt-1 font-display text-xl text-stone-900">0 W</dd>
+      </div>
+      <div class="bg-wood-100/70 p-5">
+        <dt class="text-xs uppercase tracking-[0.15em] text-stone-500">From</dt>
+        <dd class="mt-1 font-display text-xl text-stone-900">$259</dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<!-- ===================================================================
+     Advantages — accordion (cream)
+==================================================================== -->
+<section id="advantages" data-nav="light" class="bg-wood-50 text-stone-900">
+  <div class="max-w-5xl mx-auto px-5 sm:px-8 py-28 sm:py-36">
+    <p data-reveal class="text-xs uppercase tracking-[0.25em] text-wood-600 font-medium">A better way to plan</p>
+    <h2 data-reveal data-reveal-delay="1" class="display-lg mt-5 max-w-3xl">Everything considered, before you buy.</h2>
+
+    <div class="mt-12 divide-y divide-stone-300/60 border-y border-stone-300/60">
+      <div class="acc-item is-open">
+        <button class="acc-trigger w-full flex items-center justify-between py-6 text-left">
+          <span class="font-display text-2xl sm:text-3xl">Real dimensions</span>
+          <i data-lucide="plus" class="acc-icon w-6 h-6 text-wood-600"></i>
+        </button>
+        <div class="acc-panel"><p class="pb-6 max-w-2xl text-stone-600 leading-relaxed">Plan against an actual room footprint in feet — every piece is bounds-checked so a layout that looks like it fits actually does.</p></div>
+      </div>
+      <div class="acc-item">
+        <button class="acc-trigger w-full flex items-center justify-between py-6 text-left">
+          <span class="font-display text-2xl sm:text-3xl">Live power &amp; spacing</span>
+          <i data-lucide="plus" class="acc-icon w-6 h-6 text-wood-600"></i>
+        </button>
+        <div class="acc-panel"><p class="pb-6 max-w-2xl text-stone-600 leading-relaxed">Outlet counts and clearance warnings recompute on every move, so you catch a cramped or under-powered layout before it's built.</p></div>
+      </div>
+      <div class="acc-item">
+        <button class="acc-trigger w-full flex items-center justify-between py-6 text-left">
+          <span class="font-display text-2xl sm:text-3xl">Priced blueprint</span>
+          <i data-lucide="plus" class="acc-icon w-6 h-6 text-wood-600"></i>
+        </button>
+        <div class="acc-panel"><p class="pb-6 max-w-2xl text-stone-600 leading-relaxed">An itemized shopping list with a running total, exportable as a JSON blueprint — no account, no checkout, no data leaving your device.</p></div>
+      </div>
+      <div class="acc-item">
+        <button class="acc-trigger w-full flex items-center justify-between py-6 text-left">
+          <span class="font-display text-2xl sm:text-3xl">Runs in your browser</span>
+          <i data-lucide="plus" class="acc-icon w-6 h-6 text-wood-600"></i>
+        </button>
+        <div class="acc-panel"><p class="pb-6 max-w-2xl text-stone-600 leading-relaxed">One page, no backend, no sign-in. Your layout is saved locally and restored the next time you visit.</p></div>
       </div>
     </div>
   </div>
@@ -161,12 +381,20 @@
 <!-- ===================================================================
      Planner
 ==================================================================== -->
-<section id="planner" class="border-t border-stone-200 bg-white">
-  <div class="max-w-7xl mx-auto px-5 sm:px-8 py-16">
+<section id="planner" data-nav="light" class="bg-gradient-to-b from-stone-100 to-stone-200 text-stone-900">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8 py-24 sm:py-32">
+    <div class="mb-10 text-center">
+      <p data-reveal class="text-xs uppercase tracking-[0.25em] text-wood-600 font-medium">The studio workbench</p>
+      <h2 data-reveal data-reveal-delay="1" class="display-lg mt-5">Lay it out. Watch it add up.</h2>
+      <p data-reveal data-reveal-delay="2" class="mt-5 text-stone-500 max-w-xl mx-auto">Pick a room size, place furniture from the catalog, and watch cost, power and spacing update in real time.</p>
+    </div>
+
+    <!-- Bright "workbench" panel — cinematic shell frames it; the tool inside stays a clean, legible instrument. -->
+    <div class="rounded-3xl bg-white ring-1 ring-stone-200 shadow-[0_40px_100px_-40px_rgba(41,37,33,0.35)] p-5 sm:p-8">
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
       <div>
-        <h2 class="text-2xl sm:text-3xl font-semibold tracking-tight text-stone-900">Micro-Office Layout Builder</h2>
-        <p class="mt-2 text-stone-500 max-w-xl">Pick a room size, place furniture from the catalog, and watch the numbers on the right update in real time.</p>
+        <h3 class="text-xl sm:text-2xl font-display font-medium tracking-tight text-stone-900">Micro-Office Layout Builder</h3>
+        <p class="mt-2 text-stone-500 max-w-xl text-sm">Click an item to place it, or drag it onto the floor plan.</p>
       </div>
       <button id="btn-reset"
         class="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 text-stone-600 text-sm font-medium px-3.5 py-2 hover:border-stone-400 hover:bg-stone-50 transition-colors self-start sm:self-auto">
@@ -191,7 +419,7 @@
       </aside>
 
       <!-- Canvas -->
-      <div>
+      <div class="min-w-0">
         <div class="flex items-center justify-between mb-3">
           <div id="room-dims-label" class="text-sm font-medium text-stone-600"></div>
           <div id="item-count-label" class="text-sm text-stone-400"></div>
@@ -230,18 +458,22 @@
         </div>
       </aside>
     </div>
+    </div><!-- /workbench panel -->
   </div>
 </section>
 
 <!-- ===================================================================
-     Blueprint & shopping list summary
+     Blueprint & shopping list summary — dark "blueprint" panel
 ==================================================================== -->
-<section id="summary" class="border-t border-stone-200 bg-stone-50">
-  <div class="max-w-4xl mx-auto px-5 sm:px-8 py-16">
-    <h2 class="text-2xl sm:text-3xl font-semibold tracking-tight text-stone-900">Blueprint &amp; Shopping List</h2>
-    <p class="mt-2 text-stone-500">A live, itemized breakdown of everything on your floor plan right now.</p>
+<section id="summary" data-nav="dark" class="relative bg-espresso-900 text-stone-100">
+  <div class="absolute inset-0 opacity-[0.06] pointer-events-none"
+       style="background-image:linear-gradient(#e3cba8 1px,transparent 1px),linear-gradient(90deg,#e3cba8 1px,transparent 1px);background-size:32px 32px;"></div>
+  <div class="relative max-w-4xl mx-auto px-5 sm:px-8 py-28 sm:py-36">
+    <p data-reveal class="text-xs uppercase tracking-[0.25em] text-wood-300 font-medium">The output</p>
+    <h2 data-reveal data-reveal-delay="1" class="display-lg mt-5 text-white">Blueprint &amp; shopping list.</h2>
+    <p data-reveal data-reveal-delay="2" class="mt-5 text-stone-400">A live, itemized breakdown of everything on your floor plan right now.</p>
 
-    <div class="mt-8 rounded-xl border border-stone-200 bg-white shadow-soft overflow-hidden">
+    <div data-reveal class="mt-10 rounded-2xl bg-white text-stone-800 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.6)] overflow-hidden">
       <table class="w-full text-sm">
         <thead class="bg-stone-50 text-stone-500 text-xs uppercase tracking-wide">
           <tr>
@@ -262,9 +494,9 @@
       </div>
     </div>
 
-    <div class="mt-6 flex flex-col sm:flex-row gap-3">
+    <div class="mt-8 flex flex-col sm:flex-row gap-3">
       <button id="btn-export"
-        class="inline-flex items-center justify-center gap-2 rounded-lg bg-stone-900 text-white font-medium px-6 py-3.5 hover:bg-wood-700 active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none">
+        class="inline-flex items-center justify-center gap-2 rounded-lg bg-wood-600 text-white font-medium px-6 py-3.5 hover:bg-wood-500 active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none">
         <i data-lucide="download" class="w-4 h-4"></i>
         Export / Save Blueprint
       </button>
@@ -272,9 +504,34 @@
   </div>
 </section>
 
-<footer class="border-t border-stone-200 py-10">
-  <div class="max-w-7xl mx-auto px-5 sm:px-8 text-sm text-stone-400">
-    SpatialFlow is a fictional product built as a proof-of-concept demo. Everything runs in your browser — no data leaves your device.
+<!-- ===================================================================
+     Cinematic finale
+==================================================================== -->
+<section data-nav="dark" class="relative overflow-hidden bg-espresso-900 text-white">
+  <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+    <span class="finale-word">SPACE</span>
+  </div>
+  <div class="relative max-w-4xl mx-auto px-5 sm:px-8 py-32 sm:py-48 text-center">
+    <div data-reveal class="inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-wood-300 font-medium">
+      <i data-lucide="globe" class="w-4 h-4"></i> Design anywhere
+    </div>
+    <h2 data-reveal data-reveal-delay="1" class="display-lg mt-6">Your next room starts here.</h2>
+    <p data-reveal data-reveal-delay="2" class="mt-6 max-w-xl mx-auto text-stone-400 leading-relaxed">
+      No account, no download, no data leaving your device — just a plan you can
+      build. Open the workbench and place your first piece.
+    </p>
+    <div data-reveal data-reveal-delay="3" class="mt-10">
+      <a href="#planner" class="inline-flex items-center gap-2 rounded-full bg-white text-stone-900 font-medium px-7 py-3.5 hover:bg-wood-50 transition-colors">
+        Start planning <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer class="bg-espresso-900 border-t border-white/10 py-10">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm text-stone-500">
+    <div class="font-display text-stone-300">Spatial<span class="font-light">Flow</span></div>
+    <div>A fictional product · proof-of-concept demo · everything runs in your browser.</div>
   </div>
 </footer>
 
@@ -335,11 +592,11 @@
   ];
 
   var FURNITURE_CATALOG = [
-    { type: "standing-desk",  label: "Ergonomic Standing Desk", icon: "table-2",   w: 3, h: 2, costUsd: 449, watts: 90, clearanceFt: 1, color: "#bf8c56" },
-    { type: "acoustic-panel", label: "Acoustic Pod Panel",      icon: "volume-2",  w: 2, h: 1, costUsd: 189, watts: 0,  clearanceFt: 0, color: "#8c5a32" },
-    { type: "lighting-rig",   label: "Studio Lighting Rig",     icon: "lightbulb", w: 2, h: 1, costUsd: 129, watts: 60, clearanceFt: 0, color: "#d1ab7a" },
-    { type: "bookshelf",      label: "Bookshelf",               icon: "book-open", w: 3, h: 1, costUsd: 219, watts: 0,  clearanceFt: 0, color: "#714829" },
-    { type: "ergo-chair",     label: "Ergonomic Chair",         icon: "armchair",  w: 1, h: 1, costUsd: 259, watts: 0,  clearanceFt: 1, color: "#a8713f" }
+    { type: "standing-desk",  label: "Ergonomic Standing Desk", icon: "table-2",   w: 3, h: 2, costUsd: 449, watts: 90, clearanceFt: 1, color: "#bf8c56", image: "images/furniture/standing-desk.jpg" },
+    { type: "acoustic-panel", label: "Acoustic Pod Panel",      icon: "volume-2",  w: 2, h: 1, costUsd: 189, watts: 0,  clearanceFt: 0, color: "#8c5a32", image: "images/furniture/acoustic-panel.jpg" },
+    { type: "lighting-rig",   label: "Studio Lighting Rig",     icon: "lightbulb", w: 2, h: 1, costUsd: 129, watts: 60, clearanceFt: 0, color: "#d1ab7a", image: "images/furniture/lighting-rig.jpg" },
+    { type: "bookshelf",      label: "Bookshelf",               icon: "book-open", w: 3, h: 1, costUsd: 219, watts: 0,  clearanceFt: 0, color: "#714829", image: "images/furniture/bookshelf.jpg" },
+    { type: "ergo-chair",     label: "Ergonomic Chair",         icon: "armchair",  w: 1, h: 1, costUsd: 259, watts: 0,  clearanceFt: 1, color: "#a8713f", image: "images/furniture/ergo-chair.svg" }
   ];
 
   function catalogEntry(type) {
@@ -701,7 +958,7 @@
     layout.items.forEach(function (item) {
       var entry = catalogEntry(item.type);
       var el = document.createElement("div");
-      el.className = "placed-item absolute rounded-md shadow-sm flex flex-col items-center justify-center text-white text-[11px] font-medium text-center leading-tight px-1 cursor-grab select-none";
+      el.className = "placed-item absolute rounded-md shadow-sm overflow-hidden cursor-grab select-none";
       if (spacing.flaggedIds[item.id]) el.classList.add("spacing-warning");
       el.dataset.id = item.id;
       el.style.left = (item.x * cellPx) + "px";
@@ -710,15 +967,29 @@
       el.style.height = (item.h * cellPx) + "px";
       el.style.background = entry.color;
 
-      var icon = document.createElement("i");
-      icon.setAttribute("data-lucide", entry.icon);
-      icon.className = "w-4 h-4 mb-0.5 pointer-events-none";
-      el.appendChild(icon);
+      var itemImg = document.createElement("img");
+      itemImg.src = entry.image;
+      itemImg.alt = "";
+      itemImg.className = "absolute inset-0 w-full h-full object-cover pointer-events-none";
 
-      var label = document.createElement("span");
-      label.className = "pointer-events-none";
-      label.textContent = entry.label;
-      el.appendChild(label);
+      var caption = document.createElement("div");
+      caption.className = "absolute inset-x-0 bottom-0 bg-black/55 text-white text-[10px] font-medium text-center leading-tight px-1 py-0.5 truncate pointer-events-none";
+      caption.textContent = entry.label;
+
+      var fallback = document.createElement("div");
+      fallback.className = "absolute inset-0 hidden flex-col items-center justify-center text-white text-[11px] font-medium text-center leading-tight px-1 pointer-events-none";
+      fallback.innerHTML = '<i data-lucide="' + entry.icon + '" class="w-4 h-4 mb-0.5"></i><span>' + entry.label + '</span>';
+
+      itemImg.onerror = function () {
+        itemImg.remove();
+        caption.remove();
+        fallback.classList.remove("hidden");
+        fallback.classList.add("flex");
+      };
+
+      el.appendChild(itemImg);
+      el.appendChild(caption);
+      el.appendChild(fallback);
 
       var controls = document.createElement("div");
       controls.className = "absolute -top-3 -right-2 flex gap-1";
@@ -781,9 +1052,23 @@
       el.className = "catalog-item flex-shrink-0 w-44 lg:w-auto flex items-center gap-3 rounded-lg border border-stone-200 bg-white px-3 py-2.5 cursor-grab hover:border-wood-300 hover:shadow-soft transition-all";
 
       var swatch = document.createElement("div");
-      swatch.className = "w-9 h-9 rounded-md flex items-center justify-center flex-shrink-0 text-white";
+      swatch.className = "w-9 h-9 rounded-md flex-shrink-0 relative overflow-hidden text-white";
       swatch.style.background = entry.color;
-      swatch.innerHTML = '<i data-lucide="' + entry.icon + '" class="w-4.5 h-4.5 pointer-events-none" style="width:18px;height:18px"></i>';
+
+      var swatchImg = document.createElement("img");
+      swatchImg.src = entry.image;
+      swatchImg.alt = "";
+      swatchImg.className = "absolute inset-0 w-full h-full object-cover";
+      var swatchFallback = document.createElement("div");
+      swatchFallback.className = "absolute inset-0 hidden items-center justify-center";
+      swatchFallback.innerHTML = '<i data-lucide="' + entry.icon + '" class="pointer-events-none" style="width:18px;height:18px"></i>';
+      swatchImg.onerror = function () {
+        swatchImg.remove();
+        swatchFallback.classList.remove("hidden");
+        swatchFallback.classList.add("flex");
+      };
+      swatch.appendChild(swatchImg);
+      swatch.appendChild(swatchFallback);
 
       var info = document.createElement("div");
       info.className = "min-w-0";
@@ -840,9 +1125,15 @@
       shoppingEmptyEl.classList.add("hidden");
       btnExportEl.removeAttribute("disabled");
       shopping.rows.forEach(function (row) {
+        var rowEntry = catalogEntry(row.type);
         var tr = document.createElement("tr");
         tr.innerHTML =
-          '<td class="px-5 py-3 text-stone-700">' + row.label + '</td>' +
+          '<td class="px-5 py-3 text-stone-700">' +
+            '<div class="flex items-center gap-2.5">' +
+              '<img src="' + rowEntry.image + '" alt="" class="w-8 h-8 rounded object-cover flex-shrink-0 bg-stone-100" onerror="this.remove()">' +
+              '<span>' + row.label + '</span>' +
+            '</div>' +
+          '</td>' +
           '<td class="px-3 py-3 text-center text-stone-500">' + row.qty + '</td>' +
           '<td class="px-3 py-3 text-right text-stone-500">$' + row.unitCost.toLocaleString() + '</td>' +
           '<td class="px-5 py-3 text-right font-medium text-stone-800">$' + row.subtotal.toLocaleString() + '</td>';
@@ -878,11 +1169,24 @@
       function ensureGhost(clientX, clientY) {
         if (ghost) return;
         ghost = document.createElement("div");
-        ghost.className = "drag-ghost rounded-md flex items-center justify-center text-white text-xs font-medium";
+        ghost.className = "drag-ghost rounded-md overflow-hidden";
         ghost.style.width = (entry.w * 36) + "px";
         ghost.style.height = (entry.h * 36) + "px";
         ghost.style.background = entry.color;
-        ghost.textContent = entry.label;
+        var ghostImg = document.createElement("img");
+        ghostImg.src = entry.image;
+        ghostImg.alt = "";
+        ghostImg.className = "absolute inset-0 w-full h-full object-cover pointer-events-none";
+        var ghostFallback = document.createElement("div");
+        ghostFallback.className = "absolute inset-0 flex items-center justify-center text-white text-xs font-medium hidden";
+        ghostFallback.textContent = entry.label;
+        ghostImg.onerror = function () {
+          ghostImg.remove();
+          ghostFallback.classList.remove("hidden");
+          ghostFallback.classList.add("flex");
+        };
+        ghost.appendChild(ghostImg);
+        ghost.appendChild(ghostFallback);
         document.body.appendChild(ghost);
         moveGhost(clientX, clientY);
       }
@@ -1004,6 +1308,103 @@
   }
 
   /* =====================================================================
+   * Presentation layer — cinematic scroll scenes (redesign-jesko-aesthetic)
+   * Only reads scroll/intersection signals and toggles classes on
+   * marketing-shell nodes; never reads or writes `state`/`Layout`, never
+   * runs inside #planner's dynamic subtree. See ARCHITECTURE.md §10.
+   * ===================================================================*/
+
+  var prefersReducedMotion = window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function initScrollReveal() {
+    var nodes = document.querySelectorAll("[data-reveal]");
+    if (!nodes.length) return;
+
+    if (prefersReducedMotion) {
+      nodes.forEach(function (n) { n.classList.add("is-revealed"); });
+      return;
+    }
+    // IntersectionObserver is the primary driver (CSS `animation-timeline:
+    // view()` was removed — it left the final screenful stuck hidden).
+    if (!("IntersectionObserver" in window)) {
+      nodes.forEach(function (n) { n.classList.add("is-revealed"); });
+      return;
+    }
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-revealed");
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.15 });
+    nodes.forEach(function (n) { observer.observe(n); });
+  }
+
+  function initHeroZoom() {
+    // Progressive enhancement only: the hero is fully legible at scale(1).
+    if (prefersReducedMotion) return;
+    var portal = document.querySelector(".hero-portal");
+    var hero = portal && portal.closest("section");
+    if (!portal || !hero) return;
+
+    var ticking = false;
+    function update() {
+      ticking = false;
+      var h = hero.offsetHeight || window.innerHeight;
+      // progress 0 → 1 across the first ~65% of the hero's scroll runway
+      var p = Math.min(1, Math.max(0, window.scrollY / (h * 0.65)));
+      var scale = 1 + p * 1.6;      // up to 2.6×, matching the intended zoom
+      var fade = 1 - p * 0.9;       // portal recedes as the page takes over
+      portal.style.transform = "scale(" + scale.toFixed(3) + ")";
+      portal.style.opacity = fade.toFixed(3);
+    }
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    update();
+  }
+
+  function initAccordion() {
+    var items = document.querySelectorAll(".acc-item");
+    items.forEach(function (item) {
+      var btn = item.querySelector(".acc-trigger");
+      if (!btn) return;
+      btn.addEventListener("click", function () {
+        item.classList.toggle("is-open");
+      });
+    });
+  }
+
+  function initNavContrast() {
+    var nav = document.getElementById("site-nav");
+    var sections = [].slice.call(document.querySelectorAll("[data-nav]"));
+    if (!nav || !sections.length) return;
+    var band = 32; // vertical center of the 64px-tall nav
+    var ticking = false;
+    function update() {
+      ticking = false;
+      var theme = "dark"; // default: dark section → light nav text
+      for (var i = 0; i < sections.length; i++) {
+        var r = sections[i].getBoundingClientRect();
+        if (r.top <= band && r.bottom > band) { theme = sections[i].getAttribute("data-nav"); break; }
+      }
+      nav.classList.toggle("nav-dark", theme === "light");
+    }
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    update();
+  }
+
+  /* =====================================================================
    * Entry point
    * ===================================================================*/
 
@@ -1028,6 +1429,11 @@
   state.layout = restore();
   renderCatalog();
   afterEdit();
+
+  initScrollReveal();
+  initHeroZoom();
+  initAccordion();
+  initNavContrast();
 })();
 </script>
 

@@ -10,7 +10,7 @@
 | --- | --- | --- | --- |
 | `RoomPreset` | `{ id, label, widthFt, heightFt }` | `index.html:ROOM_PRESETS` | built |
 | `RoomConfig` | `{ presetId, widthFt, heightFt }` | `index.html:defaultLayout` | built |
-| `FurnitureCatalogEntry` | `{ type, label, icon, w, h, costUsd, watts, clearanceFt, color }` | `index.html:FURNITURE_CATALOG` | built |
+| `FurnitureCatalogEntry` | `{ type, label, icon, w, h, costUsd, watts, clearanceFt, color, image }` | `index.html:FURNITURE_CATALOG` | built |
 | `FurnitureItem` | `{ id, type, x, y, w, h, rotation }` | `index.html:instantiate` | built |
 | `Layout` | `{ room: RoomConfig, items: FurnitureItem[] }` | `index.html:defaultLayout` | built |
 | `StoredLayoutJSON` | `JSON.stringify(Layout)` under `localStorage` key `spatialflow.layout.v2` | `index.html:STORAGE_KEY` | built |
@@ -41,6 +41,10 @@
 | `persist` (Trm) | `Layout(runtime) → StoredLayoutJSON(localStorage)` | `index.html:persist` | built |
 | `restore` (Trm) | `StoredLayoutJSON(localStorage) → Layout(runtime)` | `index.html:restore` | built |
 | `downloadBlueprint` (Trm) | `Blueprint(runtime) → JSON file(downloads)` | `index.html:downloadBlueprint` | built |
+| `initScrollReveal` (presentation) | `DOM(marketing subtree) → DOM` — IntersectionObserver-driven | `index.html:initScrollReveal` | built |
+| `initHeroZoom` (presentation) | `scroll signal → DOM(hero portal transform)` | `index.html:initHeroZoom` | built |
+| `initAccordion` (presentation) | `click → DOM(.acc-item.is-open)` | `index.html:initAccordion` | built |
+| `initNavContrast` (presentation) | `scroll signal → DOM(#site-nav.nav-dark)` | `index.html:initNavContrast` | built |
 
 ## Composition rules → where enforced
 
@@ -73,3 +77,39 @@
 - No automated test suite exists; verification is manual in-browser (see
   `reviews/review-redesign-tailwind-planner.md`). Named gap, not a silent
   one — unchanged from the prior build.
+- **Cinematic redesign (`redesign-jesko-aesthetic`)**: `index.html`'s
+  marketing shell was reskinned to a dark, scroll-driven, jeskojets.com-style
+  aesthetic (Space Grotesk display via Google Fonts, `espresso` palette tokens,
+  full-bleed sections, portal hero, split headline, accordion, spec table,
+  dark finale, floating pill CTA). The planner (`FURNITURE_CATALOG`,
+  `compute*`, `addItem`/`moveItem`/…, `serialize`/`deserialize`,
+  `persist`/`restore`, and all internal markup/classes) is **unchanged** — it
+  is only wrapped in a light "studio workbench" panel and given a new section
+  heading. Presentation `Trn` (`initScrollReveal`/`initHeroZoom`/
+  `initAccordion`) never touch `state.layout` and never run inside the planner
+  subtree (ARCHITECTURE.md §10, planner-fence invariant).
+- **Scroll motion is JS-driven, not CSS** (post-review fix): `animation-timeline:
+  scroll()` AND `view()` both proved unreliable in the target engine — `scroll()`
+  was inert (hero zoom), and `view()` with `animation-range: entry` left the
+  final screenful (finale + blueprint summary) permanently hidden because those
+  elements can't complete their entry range before the page's scroll limit. So
+  `initHeroZoom` drives the hero via a rAF scroll handler, and `initScrollReveal`
+  now drives ALL `[data-reveal]` reveals via `IntersectionObserver` (the CSS
+  `view()` path was removed). Reduced-motion still reveals everything immediately.
+- **Fixed-nav contrast** (post-review fix): the nav's `mix-blend-mode: difference`
+  was illegible over the light (cream/gold/planner) sections; replaced by
+  `initNavContrast`, a scroll-spy that toggles `#site-nav.nav-dark` (dark text)
+  when a `data-nav="light"` section is under the nav band, defaulting to white
+  text over dark sections.
+- **Furniture catalog images** (restored on user request): each
+  `FURNITURE_CATALOG` entry has an `image` (path into `images/furniture/`),
+  rendered as `<img>` in the catalog swatch (`renderCatalog`), placed canvas
+  items + drag-ghost (`renderGrid`/`attachCatalogDrag`), and shopping-list rows
+  (`renderMetrics`), each with an `onerror` fallback to the Lucide icon + color.
+  Resolved at render time via `catalogEntry(type)` — no `Layout`/`FurnitureItem`/
+  `StoredLayoutJSON` change (verified: `localStorage` stores items by `type`/
+  coords only, no `image` leak). Credited in `images/CREDITS.md`.
+- **Imagery**: `images/hero-workspace.jpg` (CC BY-SA 4.0) and
+  `images/showcase-chair.jpg` (public domain), sourced from Wikimedia Commons,
+  credited in `images/CREDITS.md`; each `<img>` has an `onerror`/fallback so a
+  missing file never breaks layout.
