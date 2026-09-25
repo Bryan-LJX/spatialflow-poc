@@ -4,7 +4,9 @@
 
 | Component | State | Headline gap | In flight | Detail |
 | --- | --- | --- | --- | --- |
-| Site | 🔄 in flight | no automated tests; auth/persistence verified locally, production deploy pending | `add-user-auth-persistence` | [site/STATUS.md](site/STATUS.md) |
+| Site | 🔄 in flight | no automated tests; auth/persistence deployed and verified in production, closeout pending | `add-user-auth-persistence` | [site/STATUS.md](site/STATUS.md) |
+
+**Production**: https://spatialflow-poc.vercel.app/
 
 ## Cross-cutting
 
@@ -16,9 +18,9 @@ blueprint export). `add-user-auth-persistence` (in flight) adds email/password
 registration and login via Supabase Auth, and replaces the anonymous
 single-device `localStorage` layout with per-user, RLS-protected storage in
 Supabase Postgres for signed-in visitors — signed-out visitors keep the
-original local, single-device planner unchanged. Implemented and verified
-locally (registration, login, logout, session restore, save/reload
-round-trip, RLS cross-account denial, non-blocking save-failure handling);
-deploying to Vercel production is the remaining step. No automated test suite
+original local, single-device planner unchanged. Implemented and verified both
+locally and in production (registration, login, logout, session restore,
+save/reload round-trip, RLS cross-account denial, non-blocking save-failure
+handling); only closeout (drift check + archive) remains. No automated test suite
 exists anywhere in the repo — acceptable for this PoC's scope, tracked as a
 named gap.

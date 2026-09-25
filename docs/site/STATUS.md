@@ -6,11 +6,13 @@
 ## Headline
 
 🔄 in flight — `add-user-auth-persistence`: email/password auth and per-user
-Supabase-backed layout storage are implemented and verified locally
-(registration, login, logout, session restore, save/restore round-trip, RLS
-cross-account denial, non-blocking save-failure warning, unchanged
-signed-out local fallback); production deployment to Vercel is the remaining
-step.
+Supabase-backed layout storage are implemented and verified both locally and
+in production (registration, login, logout, session restore, save/restore
+round-trip — verified with a direct authenticated REST read against Supabase,
+not just the UI — RLS cross-account denial, non-blocking save-failure
+warning, unchanged signed-out local fallback). Deployed at
+**https://spatialflow-poc.vercel.app/**. Remaining: closeout (drift check,
+archive).
 
 ✅ built (baseline) — `index.html` (Tailwind + Lucide CDN, Space Grotesk
 display via Google Fonts, vanilla JS) per `docs/site/ARCHITECTURE.md`: a
@@ -51,9 +53,8 @@ change's proposal).
 3. Hero "zoom-through" is JS-driven because CSS `animation-timeline: scroll()`
    is inert in the target engine — works, but is not the native
    scroll-timeline implementation; revisit if that engine support lands.
-4. `add-user-auth-persistence` is verified locally only — production
-   deployment to Vercel (task group 5) and re-verification against the live
-   URL are still pending.
+4. `add-user-auth-persistence` is deployed and verified in production; only
+   closeout (drift check + archive) remains.
 
 ## Coherence
 

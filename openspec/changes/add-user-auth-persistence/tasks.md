@@ -90,9 +90,9 @@
 - [x] 5.1 Set the production Supabase URL/anon key as the values baked into
       (or configured for) the deployed `index.html`; verify they match the
       project from task 1.1, not a local/test project
-- [ ] 5.2 Deploy to Vercel production; verify the live URL loads the site
+- [x] 5.2 Deploy to Vercel production; verify the live URL loads the site
       with no console errors (`read_console_messages`/browser devtools)
-- [ ] 5.3 Re-run the key spec scenarios against the production URL:
+- [x] 5.3 Re-run the key spec scenarios against the production URL:
       register, log in, save a layout, reload, log out, confirm signed-out
       fallback — not just against localhost
 - [ ] 5.4 Record the production URL and the Vercel/Supabase project

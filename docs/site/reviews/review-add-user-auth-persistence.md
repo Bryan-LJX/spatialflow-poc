@@ -85,5 +85,8 @@ in `signUp`.
 ## Verdict
 
 All checkable laws pass. No FAILs to record in `architecture-map.md` §5.
-Production deployment (task group 5) and re-verification against the live
-Vercel URL are the remaining steps before this change can be archived.
+Deployed to production at https://spatialflow-poc.vercel.app/ and every
+scenario above was re-verified there (login + saved-layout restore, session
+persistence across reload, a fresh write confirmed via a direct authenticated
+REST read against Supabase, sign-out) — not assumed to carry over from local
+testing. Only closeout (drift check + archive) remains.
