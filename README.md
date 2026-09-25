@@ -77,6 +77,70 @@ gitignored and never gets committed.
    `supabase-config.js` automatically.
 3. Deploy.
 
+## CI/CD pipeline
+
+Every push to `master` ships automatically — no manual deploy step, no
+server to log into.
+
+```mermaid
+flowchart LR
+    subgraph dev["Local development"]
+        A[index.html / planner.html] --> B[git commit]
+    end
+
+    subgraph gh["Source control"]
+        C[(GitHub repo\nBryan-LJX/spatialflow-poc)]
+    end
+
+    subgraph trigger["Trigger"]
+        D[Vercel GitHub integration\nwebhook on push]
+    end
+
+    subgraph build["Build"]
+        E[Vercel build container\nruns vercel.json buildCommand]
+        F[Writes supabase-config.js\nfrom env vars]
+    end
+
+    subgraph deploy["Deploy"]
+        G[Vercel Edge Network / CDN\noutputDirectory: .]
+        H([spatialflow-poc.vercel.app])
+    end
+
+    subgraph runtime["Runtime (browser)"]
+        I[Tailwind CSS / Lucide / Google Fonts]
+        J[Three.js / GSAP / Lenis]
+        K[Supabase JS SDK]
+    end
+
+    subgraph backend["Backend services"]
+        L[(Supabase Auth)]
+        M[(Supabase Postgres + RLS)]
+    end
+
+    B --> C --> D --> E --> F --> G --> H --> I & J & K
+    K --> L
+    K --> M
+```
+
+**What happens on `git push`:**
+
+1. **GitHub** stores the code and, via the **Vercel GitHub integration**
+   (a webhook), notifies Vercel the instant `master` changes.
+2. **Vercel** clones the new commit into a fresh build container and runs
+   the `buildCommand` from [`vercel.json`](vercel.json): it writes
+   `supabase-config.js`, filling in `SUPABASE_URL` and `SUPABASE_ANON_KEY`
+   from environment variables set in the Vercel dashboard — the real key is
+   never committed to git.
+3. Whatever lands in `outputDirectory` (`.`, the repo root) is published to
+   **Vercel's Edge Network**, a global CDN, and the live URL
+   (`spatialflow-poc.vercel.app`) is updated to point at the new deployment.
+   Previous deployments stay available in the Vercel dashboard.
+4. In the browser, the two pages load their styling/motion libraries
+   (Tailwind, Lucide, Google Fonts, Three.js/GSAP/Lenis) straight from CDNs,
+   and the **Supabase JS SDK** talks directly to **Supabase Auth** and
+   **Supabase Postgres** (protected by Row Level Security) using the public
+   anon key baked in at build time.
+
 ## Project structure
 
 ```
