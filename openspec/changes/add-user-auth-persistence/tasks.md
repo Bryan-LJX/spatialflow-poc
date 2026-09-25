@@ -87,7 +87,7 @@
 
 ## 5. Deployment
 
-- [ ] 5.1 Set the production Supabase URL/anon key as the values baked into
+- [x] 5.1 Set the production Supabase URL/anon key as the values baked into
       (or configured for) the deployed `index.html`; verify they match the
       project from task 1.1, not a local/test project
 - [ ] 5.2 Deploy to Vercel production; verify the live URL loads the site
