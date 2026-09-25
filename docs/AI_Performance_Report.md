@@ -1,236 +1,175 @@
 # AI Performance Report — SpatialFlow PoC
 
-> Objective assessment of Claude's performance across this repository's build
-> history. Sourced exclusively from `docs/sessions/*.md` (as indexed by
-> gbrain) and the OpenSpec change records under
-> `openspec/changes/archive/*/{proposal,design,tasks}.md`. Covers all eight
-> sessions from 2026-09-23 (`init`) through 2026-09-25 (`readme-cicd-docs`),
-> spanning six archived OpenSpec changes.
+> A plain-language look at how well the AI (Claude) did while building this
+> website, based only on the work logs from every session and the record of
+> every feature request ("change") made in this project.
 
-## 1. Scope and method
+## What this covers
 
-Six OpenSpec changes were built end-to-end in this repo:
+Between September 23 and September 25, the AI built this site across eight
+work sessions. Six of those sessions each delivered one finished feature or
+redesign:
 
-| Change | Date | Spec mode |
-| --- | --- | --- |
-| `build-index-html` | 2026-09-23 | `skip_specs: true` |
-| `redesign-tailwind-planner` | 2026-09-23 | `skip_specs: true` |
-| `redesign-jesko-aesthetic` | 2026-09-24–25 | `skip_specs: true` |
-| `add-user-auth-persistence` | 2026-09-25 | real specs (`user-auth`, `layout-persistence`) |
-| `redesign-threejs-planner-split` | 2026-09-25 | real spec (`planner-page`) |
-| `add-showcase-chair-spin` | 2026-09-25 | `skip_specs: true` |
+1. Building the first version of the website
+2. Redesigning it with a modern furniture-catalog look
+3. Redesigning it again with a "cinematic, high-end" look
+4. Adding user accounts and saved layouts
+5. Splitting the site into two pages and adding smoother animations
+6. Adding a small animated effect to a product photo
 
-Two sessions did not produce a change: `init` (2026-09-23, scaffolding only)
-and `readme-cicd-docs` (2026-09-25, documentation only). Every claim below
-cites the session log and, where applicable, the change it belongs to.
+The other two sessions were setup and documentation work, not new features.
 
-## 2. Successes
+## 1. What went well
 
-Work that shipped correctly, was verified against real behavior (not just
-"builds without error"), and required no post-hoc correction:
+Several pieces of work were done correctly the first time, with nothing
+needing to be fixed afterward:
 
-- **`build-index-html`** (2026-09-23): the initial planner — Pointer-Events
-  drag/drop, integer-cell bounds/overlap invariants, `localStorage`
-  round-trip — worked on first implementation. All manual tests passed
-  without a fix cycle.
-- **`redesign-tailwind-planner`** (2026-09-23): the full catalog/metrics/
-  shopping-list/export rebuild passed every one of nine manual test
-  categories (hard invariants, soft invariant, power formula, utilization,
-  shopping list, export modal, persistence, responsive, console-clean) on
-  first verification, including exact hand-computed matches for the power
-  and utilization formulas.
-- **`add-user-auth-persistence`** (2026-09-25): the auth/persistence
-  capability passed all scenarios in both `user-auth` and
-  `layout-persistence` specs, both locally and re-verified against
-  production, including a genuine RLS cross-account isolation test with two
-  real Supabase accounts (not just an app-level filter check).
-- **`redesign-threejs-planner-split`** (2026-09-25): the Three.js/Lenis/GSAP
-  reskin and the `index.html`→`planner.html` extraction preserved planner
-  behavior byte-for-byte (verified via `localStorage` round-trip on the
-  extracted page) and correctly identified an implicit spec requirement
-  (the `planner-page` spec's "no embedded interactive tool in scroll flow")
-  that the written `tasks.md` had not explicitly called out.
-- **`add-showcase-chair-spin`** (2026-09-25): converged to an accepted result
-  in three iterations, with the failure of iterations 1–2 diagnosed
-  correctly from user feedback each time (see §4).
-- Image/licensing discipline (Wikimedia Commons only, `CREDITS.md` maintained
-  per image) was established in the discarded `add-scroll-animations` work
-  and reused verbatim, without being asked again, across every later image
-  addition (`redesign-jesko-aesthetic`, its post-review fixes, and the
-  furniture-photo re-sourcing).
+- **The original planner tool** (drag-and-drop furniture placement, saving
+  your layout) worked correctly the first time it was built and tested.
+- **The furniture-catalog redesign** — pricing, power usage, room space
+  used, shopping list — passed every check on the first try, and the
+  numbers matched hand-calculated totals exactly.
+- **User accounts and saved layouts** worked correctly in every test,
+  including a security check confirming one person's saved layout truly
+  cannot be seen or accessed by another person's account.
+- **Splitting the site into two pages** (marketing page and planner tool)
+  kept the planner working exactly as before — nothing broke in the move.
+- **The photo licensing process** (using only freely-licensed images and
+  keeping a credits list) was set up once and then followed correctly every
+  time afterward, without needing to be reminded.
 
-## 3. Hallucinations and incorrect technical assumptions
+## 2. Times the AI got something wrong before being corrected
 
-Cases where Claude asserted or built against a technical premise that turned
-out to be false, discovered only by live testing rather than caught before
-implementation:
+A few times, the AI built something based on an assumption that turned out
+to be incorrect once actually tested in a real browser:
 
-| Assumption | Reality | Session |
-| --- | --- | --- |
-| CSS `animation-timeline: scroll()` would drive the hero portal's scroll-zoom transform | Never applied in the target browser engine — the hero stayed at rest at every scroll position tested | `cinematic-jesko-redesign` (2026-09-24) |
-| CSS `animation-timeline: view()` + `animation-range: entry` would drive scroll reveals | Left the last screenful (finale + blueprint summary) permanently stuck at `opacity: 0`, because those elements can never finish their entry range before the page's scroll limit | `cinematic-jesko-redesign` (2026-09-24) |
-| Tailwind `ring-dashed` arbitrary value would produce a dashed outline for the soft-spacing warning | `ring-*` utilities are `box-shadow`-based and cannot render dashed — had to fall back to a plain CSS `outline: dashed` class | `redesign-tailwind-planner` (2026-09-23) |
-| `mix-blend-mode: difference` on the fixed nav would auto-invert legibly over any section background | Illegible in practice over the cream/gold/white sections; replaced with an explicit scroll-spy class toggle (`initNavContrast`) | `cinematic-jesko-redesign` (2026-09-24) |
-| `mix-blend-mode: multiply` was a durable fix for the showcase image's white background box | Worked only because that specific image had a pure-white (255/255/255) backdrop; the replacement showcase image's near-white (~238–250/255) backdrop caused the same defect to recur faintly under the same technique | `jesko-post-review-fixes` (2026-09-25) |
-| "Scroll-driven animations" meant tasteful fade-in reveals layered onto the existing warm-wood design | User's actual intent was a full dark, cinematic, jeskojets.com-style reskin — the entire `add-scroll-animations` change (proposal, design, tasks, images, review, code) was built, then discarded in full once the user clarified | `cinematic-jesko-redesign` (2026-09-24) |
+- Built an animation effect assuming a certain browser feature would make
+  an image glide in as you scroll. It didn't work at all — the image never
+  moved.
+- Built a "fade in as you scroll" effect using a different browser feature.
+  It mostly worked, but the very last section of the page stayed invisible
+  no matter how far you scrolled — a dead end the AI hadn't anticipated.
+- Tried to add a dashed-line warning outline using a shortcut styling
+  option that, it turned out, doesn't support dashed lines at all. Had to
+  use a different, more basic approach instead.
+- Used a color-blending trick to make the site's top navigation bar
+  automatically stay readable over any background. In practice it made the
+  text hard to read over several sections, so it had to be replaced with a
+  more manual (but reliable) approach.
+- Used a color-blending trick to hide a white box around a product photo.
+  It worked for that specific photo, but when the photo was swapped out
+  later for a different one, the same problem came back in a milder form —
+  because the trick only worked by coincidence for the first photo's exact
+  background color.
+- **The biggest one:** the AI initially misunderstood what "scroll-driven
+  animations" meant. It built a full version with fade-in effects on the
+  existing warm-toned design. The user then clarified they actually wanted
+  a completely different, darker, more high-end visual style (similar to a
+  private-jet company's website). The entire first attempt — code, images,
+  documentation — had to be thrown away and rebuilt from scratch in the
+  correct direction.
 
-Five of these six are narrow technical misjudgments about browser/CSS
-behavior, each caught only through direct browser verification (computed
-timing/opacity inspection, `getBoundingClientRect`, pixel sampling) rather
-than anticipated at design time. The sixth (the scroll-animation
-misinterpretation) is a scope-level misread of intent that cost a full
-discarded implementation cycle before the correct direction was built.
+## 3. Times the AI needed the user to step in
 
-## 4. Manual interventions required during code generation
+The AI could not complete everything alone. It needed the user to:
 
-Points where forward progress depended on the user acting, correcting
-direction, or supplying something Claude could not obtain or decide alone:
+- Clarify what "scroll-driven animations" actually meant, after the first
+  guess was wrong (see above).
+- Watch three different versions of a chair animation and reject the first
+  two live ("looks weird," then "not obvious enough") before approving the
+  third.
+- Ask again for the furniture photos to be re-added after they were
+  accidentally lost when the earlier wrong-direction work was discarded.
+- Personally set up the outside accounts the AI cannot create on its own —
+  the database/login service (Supabase) and the hosting service (Vercel),
+  plus connecting them to a GitHub account.
+- Explicitly tell the AI not to open or read the file containing real login
+  credentials, keeping that information private.
+- Tell the AI not to save/publish a finished piece of work yet, because the
+  user wasn't ready to make it public.
+- Confirm it was OK to save an old work log that had been sitting unsaved
+  since an earlier session.
+- Report that a diagram looked too small on GitHub's website, which the AI
+  had not checked before publishing it — it had to be redone as a
+  different type of image afterward.
+- Manually delete a section from the project's README file rather than
+  asking the AI to do it.
 
-- **Redirected scope** — the user had to explicitly name the target
-  aesthetic (jeskojets.com) after the first `add-scroll-animations`
-  implementation missed the intended direction (`cinematic-jesko-redesign`).
-- **Rejected two iterations of the showcase chair-spin animation live**
-  before accepting a third: a full 360° rotation ("looks weird") and a small
-  parallax rise ("not obvious enough") were both built, shown, and rejected
-  before the diagonal-glide version was approved (`redesign-threejs-planner-split`,
-  `add-showcase-chair-spin`).
-- **Re-requested furniture photos** a second time after they were lost when
-  the discarded `add-scroll-animations` change was rolled back — Claude had
-  to re-source the same five images rather than the user needing to
-  remember to ask once (`cinematic-jesko-redesign`).
-- **Provisioned external infrastructure Claude cannot self-serve**: the
-  Supabase project (Auth, `layouts` table, RLS policies) and the Vercel
-  project + GitHub repo connection were set up by the user, not Claude
-  (`add-user-auth-persistence`).
-- **Withheld credentials by explicit instruction**: the real
-  `supabase-config.js` was kept gitignored and never read by Claude at the
-  user's request; env-var injection at Vercel build time was used instead
-  (`add-user-auth-persistence`).
-- **Explicit "do not commit" instruction**: after the cinematic reskin was
-  fully built and verified, the user instructed Claude not to commit or
-  publish it yet; the working tree was left dirty on purpose for a full
-  session (`jesko-post-review-fixes`).
-- **Confirmed a recovered untracked file before committing**: a session log
-  from an earlier session had never been committed; Claude found it
-  untracked and asked for confirmation before adding it to history
-  (`readme-cicd-docs`).
-- **Rejected a diagram format after seeing it rendered**: a Mermaid diagram
-  in the README rendered too small on GitHub; the user reported this after
-  it shipped, requiring a replacement with a hand-authored static SVG
-  (`readme-cicd-docs`).
-- **Explicit content-removal instruction**: the user directly removed the
-  README's "Known gaps" section themselves rather than asking Claude to
-  (`redesign-threejs-planner-split`).
+## 4. Mistakes the user found that the AI's own checks missed
 
-## 5. Mistakes the user caught post-implementation that Claude did not catch first
+This is the most important pattern in the report. Several times, the AI
+tested its own work, declared it finished and working, and then the user
+found a real problem anyway just by looking at it:
 
-These are defects that passed Claude's own manual verification pass and
-were only found once the user inspected the result directly (via
-screenshots or live use), rather than being caught by Claude's own testing
-before being shown:
-
-| Defect | How the user found it | How it was found not to have been caught first | Session |
-| --- | --- | --- | --- |
-| Workbench metrics sidebar bled ~5.7px past the panel's rounded border at wide viewports | User-supplied screenshots of the uncommitted build | Fixed with `min-w-0` on the grid column, then measured (`getBoundingClientRect`) to confirm — the measurement was taken *after* the user flagged it, not as part of the original verification pass | `jesko-post-review-fixes` (2026-09-25) |
-| Showcase chair+ottoman image visually collided with the "Design … in luxe" split headline | User-supplied screenshots | Same pattern — root-caused and fixed only after the user's report | `jesko-post-review-fixes` (2026-09-25) |
-| Scroll reveals not persisting, illegible nav contrast, and missing furniture photos | The session log records these as three of "four user-reported defects" fixed in the same review pass | All three were logged as user-reported, meaning Claude's own live-verification pass in the original `redesign-jesko-aesthetic` build did not surface them | `cinematic-jesko-redesign` (2026-09-24) |
-| Chair-spin animation "looks weird" (full rotation) and "not obvious enough" (small rise) | Live user review of each iteration | Both were presented as finished before the user's aesthetic judgment overrode Claude's own assessment that each was acceptable | `redesign-threejs-planner-split` / `add-showcase-chair-spin` (2026-09-25) |
-| Mermaid CI/CD diagram rendered too small on GitHub | User viewed the rendered README on GitHub | Claude verified the diagram only in the browser pane at authoring time, not GitHub's actual Mermaid renderer/container width, so the sizing problem shipped before being caught | `readme-cicd-docs` (2026-09-25) |
-
-This is the single clearest pattern in the record: **all four defects in the
-cinematic reskin, both layout bugs in the post-review pass, both rejected
-spin iterations, and the diagram sizing issue were found by the user, not by
-Claude's own testing**, even though Claude's manual test passes for the
-*data/logic* layer (invariants, deductions, persistence, RLS) reliably
-caught real bugs before being shown. The gap is consistently visual/
-aesthetic judgment and cross-environment rendering fidelity (GitHub's
-renderer vs. the browser pane), not functional correctness.
-
-## 6. Edge cases where actual implementation differed from baseline predictions
-
-Cases where live testing surfaced behavior the initial design/implementation
-did not anticipate, requiring a mid-implementation change:
-
-- **Lenis + GSAP double-`requestAnimationFrame` desync**: the original
-  implementation let Lenis run its own default rAF loop alongside GSAP's
-  ticker. This double-drove scroll updates and visually desynced the pinned
-  hero from the fixed nav — not predicted at design time, only found via
-  `getBoundingClientRect`/`elementFromPoint` checks showing correct layout
-  while paint drifted. Fixed with `{ autoRaf: false }`, ticking Lenis only
-  from `gsap.ticker` (`redesign-threejs-planner-split`).
-- **Duplicate Supabase client race**: the initial design called for a
-  separate Supabase client per page. Live testing surfaced the SDK's own
-  "Multiple GoTrueClient instances" warning — two `createClient()` calls on
-  one page race over the same auth-token storage key. Changed mid-
-  implementation to one shared client via `site-auth.js:getSupabaseClient`
-  (`redesign-threejs-planner-split`).
-- **`currentUser` race condition**: the original design set `currentUser`
-  only via the async `onAuthStateChange` listener. Live testing found a real
-  race window where an edit made immediately after sign-in/out could land in
-  the wrong storage backend. Fixed by setting `currentUser` synchronously in
-  the `signUp`/`signIn`/`signOut` promise handlers, demoting
-  `onAuthStateChange` to handling only the one-time `INITIAL_SESSION`
-  restore (`add-user-auth-persistence`).
-- **Vercel deploy failure from a wrong default assumption**: `outputDirectory`
-  defaulted to `public/`, but the site is served from the repo root — a real
-  deploy failure discovered post-configuration, not predicted during design
-  (`add-user-auth-persistence`).
-- **Auth modal input text invisible**: white input text was inherited from
-  the dark body theme onto the modal's white card background — a real UI
-  bug found only through live interaction with the form, not anticipated in
-  the design (`add-user-auth-persistence`).
-- **Browser-pane rAF/IntersectionObserver reliability**: `requestAnimationFrame`
-  and `IntersectionObserver` callbacks were found not to fire reliably while
-  the testing environment's browser pane window was backgrounded/not
-  painted, causing synthetic `scrollTo()` jumps to under-report reveal/nav
-  state. This was an environment quirk discovered mid-session and had to be
-  cross-checked multiple times before any "stuck" result could be trusted as
-  a real bug rather than a measurement artifact (`cinematic-jesko-redesign`).
-- **Screenshot pipeline artifact isolated, not a real bug**: automated
-  screenshot capture produced blank/offset images at large scroll depths on
-  *both* `index.html` and the dependency-free `planner.html`. Because it
-  reproduced on a page with no shared dependencies, it was correctly
-  isolated to the Browser pane's own screenshot pipeline rather than misread
-  as an application defect — the inverse of the other edge cases, i.e. a
-  correct negative diagnosis (`redesign-threejs-planner-split`).
-- **Image backdrop tone assumption**: the fix for one showcase image
-  (pure-white backdrop, `mix-blend-mode: multiply`) was assumed to be a
-  general pattern; the next image sourced for the same slot had a near-white
-  (not pure white) backdrop, and the same blend-mode technique reproduced a
-  fainter version of the original defect — see §3 (`jesko-post-review-fixes`).
-
-## 7. Summary
-
-| Category | Count (this record) |
+| Problem | How it was found |
 | --- | --- |
-| Changes fully built and verified with no post-hoc fix | 3 of 6 (`build-index-html`, `redesign-tailwind-planner`, `add-user-auth-persistence` shipped clean; the other three each needed at least one correction cycle) |
-| Incorrect technical assumptions (hallucinations) caught only by live testing | 6 |
-| Sessions requiring a user-side manual intervention (redirection, external provisioning, explicit instruction, or rejection) | 7 of 8 |
-| Defects found by the user after Claude's own verification pass had already declared the work done | 6 |
-| Implementation-vs-design divergences (edge cases) surfaced only by live testing | 7 |
+| A metrics panel visually spilled slightly outside its container box on wide screens | User looked at screenshots of the finished page |
+| A product photo visually overlapped with nearby text in an awkward way | User looked at screenshots of the finished page |
+| Scroll animations weren't saving/replaying properly, the navigation bar text was hard to read, and furniture photos were missing entirely | All three reported by the user after the AI had already called the work finished |
+| A chair animation "looked weird" (full spin) | User watched it live and rejected it |
+| A second version of that same animation was "not obvious enough" | User watched it live and rejected it |
+| A diagram on the README page was too small to read on GitHub | User viewed the actual published page |
 
-**Pattern:** Claude's manual verification of *logic-layer* correctness
-(invariants, deductions, persistence round-trips, RLS isolation, race
-conditions once specifically tested for) was reliable and consistently
-caught real defects before shipping. Its blind spots were concentrated in
-(a) initial technical assumptions about CSS/browser-engine behavior that
-were asserted before being verified, and (b) *visual/aesthetic* correctness
-and cross-renderer fidelity (GitHub's Mermaid renderer, live animation feel)
-— five of six defects in §5 were caught by the user's eyes, not by any of
-Claude's own automated or measurement-based checks. The one clear scope-level
-miss (§3, "scroll-driven animations") was a misread of ambiguous instruction
-that cost a fully-built, fully-discarded implementation before the user gave
-an unambiguous reference point.
+**In short: every single one of these six problems was caught by the user
+looking at or using the actual result — not by any test the AI ran on its
+own beforehand.** By contrast, the AI's own checks were reliably good at
+catching *functional* problems (wrong numbers, broken saving, security
+leaks) — it just wasn't good at judging *how something looked or felt* to a
+real person, and once it declared something "done," that was usually before
+anyone had actually looked at it critically.
+
+## 5. Surprises during building that nobody predicted upfront
+
+A few technical problems only showed up once things were actually running
+live, not while anything was being planned or written:
+
+- Two animation systems running at the same time made the page's motion
+  slightly out of sync with itself — only noticeable once actually watching
+  it scroll, not from reading the plan.
+- The login system was accidentally being started twice on the same page,
+  which caused a warning and a risk of the login process getting confused —
+  only surfaced as a warning message during live testing.
+- A rare timing issue meant that if someone edited their layout in the
+  exact instant after logging in or out, the change could be saved to the
+  wrong place. This only showed up under deliberate, careful live testing.
+- The website failed to publish correctly the first time because of a
+  mismatched technical setting between the code and the hosting service —
+  discovered only when the actual publish attempt failed.
+- Text inside the login pop-up box was invisible (white text on a white
+  background) — only visible once actually opening and using the pop-up.
+- The AI's own screenshot tool occasionally produced blank or broken
+  images while testing scroll animations. The AI correctly figured out this
+  was a flaw in its own screenshot tool, not a real bug in the website — a
+  case of correctly *not* chasing a false alarm.
+- A styling trick that fixed a white-box problem around one photo turned
+  out to only work by coincidence for that one photo's exact shade of
+  white; a replacement photo brought the same problem back in a fainter
+  form (see also section 2).
+
+## 6. Overall summary
+
+| Measure | Result |
+| --- | --- |
+| Features that worked correctly on the first try, no fixes needed | 3 out of 6 |
+| Times the AI built something on a wrong technical assumption | 6 |
+| Sessions where the user had to personally step in, correct, or approve something | 7 out of 8 |
+| Real problems the user found that the AI's own testing had missed | 6 |
+| Live surprises that didn't match the original plan | 7 |
+
+**Bottom line:** The AI was consistently reliable at checking whether
+things *worked correctly* — correct numbers, correct saving/loading,
+correct security, no broken logins. It was consistently less reliable at
+judging whether things *looked or felt right* to an actual person, or at
+predicting rare browser/technical quirks before hitting them live. Nearly
+every visual or aesthetic problem in this project was caught by the user,
+not by the AI. The one major misstep on direction (the "scroll-driven
+animations" mix-up) happened because the initial instruction was
+open to more than one interpretation, and the AI guessed instead of asking
+for clarification first — costing a full day's worth of discarded work
+before the correct direction was confirmed.
 
 ---
 
-*Sources: `docs/sessions/2026-09-23-init.md`,
-`docs/sessions/2026-09-23-build-index-html.md`,
-`docs/sessions/2026-09-23-redesign-tailwind-planner.md`,
-`docs/sessions/2026-09-24-cinematic-jesko-redesign.md`,
-`docs/sessions/2026-09-25-add-user-auth-persistence.md`,
-`docs/sessions/2026-09-25-jesko-post-review-fixes.md`,
-`docs/sessions/2026-09-25-threejs-redesign-planner-split.md`,
-`docs/sessions/2026-09-25-readme-cicd-docs.md`;
-`openspec/changes/archive/*/{proposal,design,tasks}.md` for the six changes
-listed in §1.*
+*Sources: every work log in `docs/sessions/`, and the feature-request
+records (proposal, design, and task files) for all six features listed at
+the top of this report.*
