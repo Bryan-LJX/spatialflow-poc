@@ -49,38 +49,25 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 
+<!-- ===================================================================
+     Three.js / GSAP+ScrollTrigger / Lenis — free, MIT-licensed, CDN-only
+     (no bundler). See openspec/changes/redesign-threejs-planner-split/
+     design.md Decision 1. Never use @latest here — pin exact versions.
+==================================================================== -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/",
+    "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.7/index.js",
+    "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.12.7/ScrollTrigger.js",
+    "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.1.19/dist/lenis.mjs"
+  }
+}
+</script>
+
 <style>
-  html { scroll-behavior: smooth; }
   body { -webkit-font-smoothing: antialiased; }
-
-  /* ---- Planner-critical styles (unchanged from baseline) ---- */
-  #board {
-    background-image:
-      linear-gradient(#e7e2da 1px, transparent 1px),
-      linear-gradient(90deg, #e7e2da 1px, transparent 1px);
-    background-color: #fbf9f6;
-  }
-
-  .placed-item {
-    transition: box-shadow .15s ease, outline-color .15s ease, transform .1s ease;
-  }
-  .placed-item:active { cursor: grabbing; transform: scale(1.01); }
-
-  .spacing-warning {
-    outline: 2px dashed #d97706;
-    outline-offset: 3px;
-  }
-
-  .drag-ghost {
-    position: fixed;
-    pointer-events: none;
-    z-index: 60;
-    opacity: .85;
-    transform: translate(-50%, -50%);
-  }
-
-  .catalog-item { touch-action: none; }
-  .placed-item { touch-action: none; }
 
   @keyframes fade-in-up {
     from { opacity: 0; transform: translateY(6px); }
@@ -88,16 +75,12 @@
   }
   .fade-in-up { animation: fade-in-up .18s ease-out; }
 
-  #export-modal.is-open { display: flex; }
   #auth-modal.is-open { display: flex; }
 
-  .no-scrollbar::-webkit-scrollbar { display: none; }
-  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
   /* ===================================================================
-     Cinematic redesign (redesign-jesko-aesthetic).
-     Presentation layer only — never applied inside #planner's dynamic
-     subtree. See docs/site/ARCHITECTURE.md §10.
+     Cinematic redesign (redesign-jesko-aesthetic; presentation layer
+     rewired onto Three.js/Lenis/GSAP by redesign-threejs-planner-split).
+     See docs/site/ARCHITECTURE.md §10.
   ==================================================================== */
 
   .font-display { font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif; }
@@ -122,12 +105,9 @@
     font-size: clamp(2.25rem, 6.5vw, 5rem);
   }
 
-  /* Scroll-reveal: hidden resting state → `.is-revealed` (toggled by the
-     IntersectionObserver in initScrollReveal). A CSS `animation-timeline:
-     view()` path was tried and removed — elements in the final screenful
-     never complete their `entry` range (the page runs out of scroll), leaving
-     the finale/summary permanently hidden. IO fires on visibility threshold,
-     so reveals complete everywhere. */
+  /* Scroll-reveal: hidden resting state → `.is-revealed` (toggled by a
+     ScrollTrigger per node in assets/js/marketing-scene.js, one-shot,
+     same [data-reveal] contract as the IntersectionObserver it replaced). */
   [data-reveal] {
     opacity: 0;
     transform: translateY(28px);
@@ -138,18 +118,17 @@
   [data-reveal][data-reveal-delay="2"] { transition-delay: .16s; }
   [data-reveal][data-reveal-delay="3"] { transition-delay: .24s; }
 
-  /* Hero portal: rounded viewport that scroll-zooms toward the viewer.
-     Progressive enhancement — JS adds .hero-zoom-on only after confirming
-     the scroll() timeline actually drives the transform (see initHeroZoom). */
+  /* Hero portal: rounded viewport the zoom-through happens inside. The
+     scale/opacity scrub and its WebGL depth layer are both driven by
+     assets/js/marketing-scene.js (GSAP ScrollTrigger, pinned + scrubbed,
+     plus a Three.js scene when WebGL is available); this rule only sets
+     the resting scale(1) baseline, fully legible with JS disabled or
+     under prefers-reduced-motion. See docs/site/ARCHITECTURE.md §10. */
   .hero-portal {
     transform: scale(1);
     transform-origin: center 42%;
     will-change: transform;
   }
-  /* The scroll-linked zoom is driven by JS (initHeroZoom): CSS
-     `animation-timeline: scroll()` proved inert in the target engine, so a
-     rAF-throttled scroll handler sets the transform directly. The hero is
-     fully legible at scale(1) if that handler never runs. */
 
   /* Floating pill CTA (persistent, bottom-center) */
   .floating-cta {
@@ -184,14 +163,12 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    html { scroll-behavior: auto; }
     [data-reveal] {
       opacity: 1 !important;
       transform: none !important;
       transition: none !important;
       animation: none !important;
     }
-    .hero-zoom-on .hero-portal { animation: none !important; transform: scale(1) !important; }
   }
 </style>
 </head>
@@ -209,8 +186,7 @@
     <nav class="hidden sm:flex items-center gap-8 text-xs uppercase tracking-[0.15em] font-medium">
       <a href="#manifesto" class="hover:opacity-60 transition-opacity">Studio</a>
       <a href="#showcase" class="hover:opacity-60 transition-opacity">Fleet</a>
-      <a href="#planner" class="hover:opacity-60 transition-opacity">Planner</a>
-      <a href="#summary" class="hover:opacity-60 transition-opacity">Blueprint</a>
+      <a href="planner.html" class="hover:opacity-60 transition-opacity">Planner</a>
     </nav>
     <div id="auth-widget" class="flex items-center gap-3 text-[11px] sm:text-xs">
       <div id="auth-signed-out" class="flex items-center gap-3 uppercase tracking-[0.15em] font-medium">
@@ -226,10 +202,10 @@
 </header>
 
 <!-- Persistent floating pill CTA -->
-<a href="#planner" class="floating-cta group inline-flex items-center gap-2 rounded-full bg-white text-stone-900 text-sm font-medium pl-5 pr-2 py-2 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.6)] hover:bg-wood-50 transition-colors">
+<a href="planner.html" class="floating-cta group inline-flex items-center gap-2 rounded-full bg-white text-stone-900 text-sm font-medium pl-5 pr-2 py-2 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.6)] hover:bg-wood-50 transition-colors">
   Start Planning
   <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-wood-600 text-white group-hover:bg-wood-700 transition-colors">
-    <i data-lucide="arrow-down" class="w-4 h-4"></i>
+    <i data-lucide="arrow-right" class="w-4 h-4"></i>
   </span>
 </a>
 
@@ -240,7 +216,9 @@
   <!-- vignette -->
   <div class="pointer-events-none absolute inset-0" style="background:radial-gradient(120% 90% at 50% 35%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 100%);"></div>
 
-  <!-- Portal viewport (scroll-zooms toward the viewer) -->
+  <!-- Portal viewport (scroll-zooms toward the viewer; a Three.js canvas is
+       inserted in front of the image by marketing-scene.js when WebGL is
+       available) -->
   <div class="absolute inset-0 flex items-center justify-center">
     <div class="hero-portal relative w-[min(72vw,340px)] sm:w-[min(46vw,420px)] aspect-[3/4] rounded-[2.75rem] overflow-hidden ring-1 ring-white/15 shadow-[0_40px_120px_-20px_rgba(0,0,0,0.8),inset_0_0_0_10px_rgba(255,255,255,0.06)]">
       <img src="images/hero-workspace.jpg" alt="A calm, warmly lit workspace seen through a portal"
@@ -377,141 +355,15 @@
           <span class="font-display text-2xl sm:text-3xl">Priced blueprint</span>
           <i data-lucide="plus" class="acc-icon w-6 h-6 text-wood-600"></i>
         </button>
-        <div class="acc-panel"><p class="pb-6 max-w-2xl text-stone-600 leading-relaxed">An itemized shopping list with a running total, exportable as a JSON blueprint — no account, no checkout, no data leaving your device.</p></div>
+        <div class="acc-panel"><p class="pb-6 max-w-2xl text-stone-600 leading-relaxed">An itemized shopping list with a running total, exportable as a JSON blueprint — right from the planner page.</p></div>
       </div>
       <div class="acc-item">
         <button class="acc-trigger w-full flex items-center justify-between py-6 text-left">
           <span class="font-display text-2xl sm:text-3xl">Runs in your browser</span>
           <i data-lucide="plus" class="acc-icon w-6 h-6 text-wood-600"></i>
         </button>
-        <div class="acc-panel"><p class="pb-6 max-w-2xl text-stone-600 leading-relaxed">One page, no backend, no sign-in. Your layout is saved locally and restored the next time you visit.</p></div>
+        <div class="acc-panel"><p class="pb-6 max-w-2xl text-stone-600 leading-relaxed">No backend beyond an optional account for cross-device saves. Signed out, your layout is saved locally and restored the next time you visit.</p></div>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===================================================================
-     Planner
-==================================================================== -->
-<section id="planner" data-nav="light" class="bg-gradient-to-b from-stone-100 to-stone-200 text-stone-900">
-  <div class="max-w-7xl mx-auto px-5 sm:px-8 py-24 sm:py-32">
-    <div class="mb-10 text-center">
-      <p data-reveal class="text-xs uppercase tracking-[0.25em] text-wood-600 font-medium">The studio workbench</p>
-      <h2 data-reveal data-reveal-delay="1" class="display-lg mt-5">Lay it out. Watch it add up.</h2>
-      <p data-reveal data-reveal-delay="2" class="mt-5 text-stone-500 max-w-xl mx-auto">Pick a room size, place furniture from the catalog, and watch cost, power and spacing update in real time.</p>
-    </div>
-
-    <!-- Bright "workbench" panel — cinematic shell frames it; the tool inside stays a clean, legible instrument. -->
-    <div class="rounded-3xl bg-white ring-1 ring-stone-200 shadow-[0_40px_100px_-40px_rgba(41,37,33,0.35)] p-5 sm:p-8">
-    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
-      <div>
-        <h3 class="text-xl sm:text-2xl font-display font-medium tracking-tight text-stone-900">Micro-Office Layout Builder</h3>
-        <p class="mt-2 text-stone-500 max-w-xl text-sm">Click an item to place it, or drag it onto the floor plan.</p>
-      </div>
-      <button id="btn-reset"
-        class="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 text-stone-600 text-sm font-medium px-3.5 py-2 hover:border-stone-400 hover:bg-stone-50 transition-colors self-start sm:self-auto">
-        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-        Reset layout
-      </button>
-    </div>
-
-    <!-- Room preset selector -->
-    <div class="flex flex-wrap items-center gap-2 mb-6" id="room-presets"></div>
-
-    <!-- Notice banner -->
-    <div id="canvas-notice" class="hidden mb-4 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-sm px-4 py-2.5"></div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-[220px_1fr_340px] gap-6 items-start">
-
-      <!-- Catalog -->
-      <aside class="lg:sticky lg:top-24">
-        <h3 class="text-xs font-semibold uppercase tracking-wide text-stone-400 mb-3">Furniture catalog</h3>
-        <div id="catalog-list" class="flex lg:flex-col gap-3 overflow-x-auto no-scrollbar pb-2 lg:pb-0 lg:overflow-visible"></div>
-        <p class="hidden lg:block mt-4 text-xs text-stone-400 leading-relaxed">Click an item to place it, or drag it onto the floor plan.</p>
-      </aside>
-
-      <!-- Canvas -->
-      <div class="min-w-0">
-        <div class="flex items-center justify-between mb-3">
-          <div id="room-dims-label" class="text-sm font-medium text-stone-600"></div>
-          <div id="item-count-label" class="text-sm text-stone-400"></div>
-        </div>
-        <div class="rounded-xl border border-stone-200 bg-white p-3 sm:p-5 shadow-soft overflow-x-auto">
-          <div id="board" class="relative rounded-lg border border-stone-300 mx-auto"></div>
-        </div>
-      </div>
-
-      <!-- Live metrics -->
-      <aside class="space-y-4">
-        <div class="rounded-xl border border-stone-200 bg-stone-50 p-5">
-          <div class="flex items-center justify-between text-sm font-medium text-stone-700 mb-2">
-            <span class="inline-flex items-center gap-1.5"><i data-lucide="square-percent" class="w-4 h-4 text-wood-600"></i> Space utilization</span>
-            <span id="metric-util-pct">0%</span>
-          </div>
-          <div class="h-2 rounded-full bg-stone-200 overflow-hidden">
-            <div id="metric-util-bar" class="h-full bg-wood-500 transition-all duration-300 ease-out" style="width:0%"></div>
-          </div>
-          <p id="metric-util-detail" class="mt-1.5 text-xs text-stone-400">0 / 0 sq ft used</p>
-        </div>
-
-        <div class="rounded-xl border border-stone-200 bg-stone-50 p-5">
-          <div class="flex items-center gap-1.5 text-sm font-medium text-stone-700 mb-2">
-            <i data-lucide="zap" class="w-4 h-4 text-wood-600"></i> Power requirements
-          </div>
-          <p class="text-2xl font-semibold text-stone-900" id="metric-watts">0 W</p>
-          <p class="mt-1 text-xs text-stone-400" id="metric-outlets">0 outlets estimated</p>
-        </div>
-
-        <div id="spacing-card" class="rounded-xl border border-stone-200 bg-stone-50 p-5">
-          <div class="flex items-center gap-1.5 text-sm font-medium text-stone-700 mb-2">
-            <i data-lucide="triangle-alert" class="w-4 h-4 text-wood-600"></i> Spacing check
-          </div>
-          <p class="text-sm text-stone-500" id="metric-spacing">All clearances look good.</p>
-        </div>
-      </aside>
-    </div>
-    </div><!-- /workbench panel -->
-  </div>
-</section>
-
-<!-- ===================================================================
-     Blueprint & shopping list summary — dark "blueprint" panel
-==================================================================== -->
-<section id="summary" data-nav="dark" class="relative bg-espresso-900 text-stone-100">
-  <div class="absolute inset-0 opacity-[0.06] pointer-events-none"
-       style="background-image:linear-gradient(#e3cba8 1px,transparent 1px),linear-gradient(90deg,#e3cba8 1px,transparent 1px);background-size:32px 32px;"></div>
-  <div class="relative max-w-4xl mx-auto px-5 sm:px-8 py-28 sm:py-36">
-    <p data-reveal class="text-xs uppercase tracking-[0.25em] text-wood-300 font-medium">The output</p>
-    <h2 data-reveal data-reveal-delay="1" class="display-lg mt-5 text-white">Blueprint &amp; shopping list.</h2>
-    <p data-reveal data-reveal-delay="2" class="mt-5 text-stone-400">A live, itemized breakdown of everything on your floor plan right now.</p>
-
-    <div data-reveal class="mt-10 rounded-2xl bg-white text-stone-800 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.6)] overflow-hidden">
-      <table class="w-full text-sm">
-        <thead class="bg-stone-50 text-stone-500 text-xs uppercase tracking-wide">
-          <tr>
-            <th class="text-left font-medium px-5 py-3">Item</th>
-            <th class="text-center font-medium px-3 py-3">Qty</th>
-            <th class="text-right font-medium px-3 py-3">Unit price</th>
-            <th class="text-right font-medium px-5 py-3">Subtotal</th>
-          </tr>
-        </thead>
-        <tbody id="shopping-list-body" class="divide-y divide-stone-100"></tbody>
-      </table>
-      <div id="shopping-list-empty" class="px-5 py-10 text-center text-sm text-stone-400">
-        Nothing placed yet — add furniture in the planner above to build your blueprint.
-      </div>
-      <div class="flex items-center justify-between border-t border-stone-200 bg-stone-50 px-5 py-4">
-        <span class="text-sm font-medium text-stone-600">Estimated total</span>
-        <span id="shopping-list-total" class="text-xl font-semibold text-stone-900">$0</span>
-      </div>
-    </div>
-
-    <div class="mt-8 flex flex-col sm:flex-row gap-3">
-      <button id="btn-export"
-        class="inline-flex items-center justify-center gap-2 rounded-lg bg-wood-600 text-white font-medium px-6 py-3.5 hover:bg-wood-500 active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none">
-        <i data-lucide="download" class="w-4 h-4"></i>
-        Export / Save Blueprint
-      </button>
     </div>
   </div>
 </section>
@@ -529,11 +381,11 @@
     </div>
     <h2 data-reveal data-reveal-delay="1" class="display-lg mt-6">Your next room starts here.</h2>
     <p data-reveal data-reveal-delay="2" class="mt-6 max-w-xl mx-auto text-stone-400 leading-relaxed">
-      No account, no download, no data leaving your device — just a plan you can
-      build. Open the workbench and place your first piece.
+      Open the workbench, place your first piece, and watch the cost, power
+      and spacing add up in real time.
     </p>
     <div data-reveal data-reveal-delay="3" class="mt-10">
-      <a href="#planner" class="inline-flex items-center gap-2 rounded-full bg-white text-stone-900 font-medium px-7 py-3.5 hover:bg-wood-50 transition-colors">
+      <a href="planner.html" class="inline-flex items-center gap-2 rounded-full bg-white text-stone-900 font-medium px-7 py-3.5 hover:bg-wood-50 transition-colors">
         Start planning <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
       </a>
     </div>
@@ -546,43 +398,6 @@
     <div>A fictional product · proof-of-concept demo · everything runs in your browser.</div>
   </div>
 </footer>
-
-<!-- ===================================================================
-     Export / success modal
-==================================================================== -->
-<div id="export-modal" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
-  <div id="export-modal-backdrop" class="absolute inset-0 bg-stone-900/50 backdrop-blur-sm"></div>
-  <div class="relative w-full max-w-lg rounded-2xl bg-white shadow-soft p-6 sm:p-8 fade-in-up">
-    <div class="flex items-start justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-wood-100 flex items-center justify-center">
-          <i data-lucide="check-circle-2" class="w-5 h-5 text-wood-600"></i>
-        </div>
-        <div>
-          <h3 class="text-lg font-semibold text-stone-900">Blueprint ready</h3>
-          <p class="text-sm text-stone-500">Your layout has been captured below.</p>
-        </div>
-      </div>
-      <button id="btn-modal-close" class="text-stone-400 hover:text-stone-600 transition-colors">
-        <i data-lucide="x" class="w-5 h-5"></i>
-      </button>
-    </div>
-
-    <dl id="modal-summary" class="mt-6 grid grid-cols-2 gap-4 text-sm"></dl>
-
-    <div class="mt-7 flex flex-col sm:flex-row gap-3">
-      <button id="btn-download-json"
-        class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-wood-600 text-white font-medium px-5 py-3 hover:bg-wood-700 active:scale-[0.98] transition-all">
-        <i data-lucide="file-json" class="w-4 h-4"></i>
-        Download JSON
-      </button>
-      <button id="btn-modal-done"
-        class="flex-1 inline-flex items-center justify-center rounded-lg border border-stone-300 text-stone-700 font-medium px-5 py-3 hover:bg-stone-50 transition-colors">
-        Done
-      </button>
-    </div>
-  </div>
-</div>
 
 <div id="auth-modal" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
   <div id="auth-modal-backdrop" class="absolute inset-0 bg-stone-900/50 backdrop-blur-sm"></div>
@@ -623,984 +438,26 @@
   </div>
 </div>
 
+<script type="module">
+  import { renderAuthNav } from "./assets/js/site-auth.js";
+  renderAuthNav(document.getElementById("site-nav"));
+</script>
+
+<script type="module" src="assets/js/marketing-scene.js"></script>
+
 <script>
 (function () {
   "use strict";
 
   /* =====================================================================
-   * Dat — RoomPreset, RoomConfig, FurnitureCatalogEntry, FurnitureItem,
-   * Layout, StoredLayoutJSON. See docs/site/ARCHITECTURE.md §3.
+   * Presentation layer — accordion + nav contrast. Neither needs WebGL or
+   * scroll-scrubbed timelines, so both stay plain vanilla JS (design.md
+   * Decision 5). Only reads scroll signals and toggles classes; never
+   * touches app state (there is none on this page after the planner
+   * split). See docs/site/ARCHITECTURE.md §10.
    * ===================================================================*/
 
-  var STORAGE_KEY = "spatialflow.layout.v2";
-  var OUTLETS_PER_STRIP = 4;
-  var CIRCUIT_WATT_CAP = 1800;
-
-  var ROOM_PRESETS = [
-    { id: "8x10",  label: "8 × 10 ft — compact pod", widthFt: 8,  heightFt: 10 },
-    { id: "10x12", label: "10 × 12 ft — studio",     widthFt: 10, heightFt: 12 },
-    { id: "12x14", label: "12 × 14 ft — team pod",   widthFt: 12, heightFt: 14 }
-  ];
-
-  var FURNITURE_CATALOG = [
-    { type: "standing-desk",  label: "Ergonomic Standing Desk", icon: "table-2",   w: 3, h: 2, costUsd: 449, watts: 90, clearanceFt: 1, color: "#bf8c56", image: "images/furniture/standing-desk.jpg" },
-    { type: "acoustic-panel", label: "Acoustic Pod Panel",      icon: "volume-2",  w: 2, h: 1, costUsd: 189, watts: 0,  clearanceFt: 0, color: "#8c5a32", image: "images/furniture/acoustic-panel.jpg" },
-    { type: "lighting-rig",   label: "Studio Lighting Rig",     icon: "lightbulb", w: 2, h: 1, costUsd: 129, watts: 60, clearanceFt: 0, color: "#d1ab7a", image: "images/furniture/lighting-rig.jpg" },
-    { type: "bookshelf",      label: "Bookshelf",               icon: "book-open", w: 3, h: 1, costUsd: 219, watts: 0,  clearanceFt: 0, color: "#714829", image: "images/furniture/bookshelf.jpg" },
-    { type: "ergo-chair",     label: "Ergonomic Chair",         icon: "armchair",  w: 1, h: 1, costUsd: 259, watts: 0,  clearanceFt: 1, color: "#a8713f", image: "images/furniture/ergo-chair.svg" }
-  ];
-
-  function catalogEntry(type) {
-    for (var i = 0; i < FURNITURE_CATALOG.length; i++) {
-      if (FURNITURE_CATALOG[i].type === type) return FURNITURE_CATALOG[i];
-    }
-    return null;
-  }
-
-  function roomPreset(id) {
-    for (var i = 0; i < ROOM_PRESETS.length; i++) {
-      if (ROOM_PRESETS[i].id === id) return ROOM_PRESETS[i];
-    }
-    return null;
-  }
-
-  function defaultLayout() {
-    var preset = ROOM_PRESETS[0];
-    return {
-      room: { presetId: preset.id, widthFt: preset.widthFt, heightFt: preset.heightFt },
-      items: []
-    };
-  }
-
-  var state = { layout: defaultLayout() };
-  var nextId = 1;
-  var noticeTimer = null;
-
-  /* =====================================================================
-   * Composition rules (ARCHITECTURE.md §6): bounds + no-overlap are HARD;
-   * clearance/spacing is SOFT (warning only, never blocks placement).
-   * ===================================================================*/
-
-  function withinBounds(layout, item) {
-    return item.x >= 0 && item.y >= 0 &&
-      item.x + item.w <= layout.room.widthFt &&
-      item.y + item.h <= layout.room.heightFt;
-  }
-
-  function overlaps(a, b) {
-    return a.x < b.x + b.w && a.x + a.w > b.x &&
-      a.y < b.y + b.h && a.y + a.h > b.y;
-  }
-
-  function hasCollision(layout, item, ignoreId) {
-    for (var i = 0; i < layout.items.length; i++) {
-      var other = layout.items[i];
-      if (other.id === ignoreId) continue;
-      if (overlaps(item, other)) return true;
-    }
-    return false;
-  }
-
-  function placementValid(layout, item, ignoreId) {
-    return withinBounds(layout, item) && !hasCollision(layout, item, ignoreId);
-  }
-
-  /* =====================================================================
-   * Trn — selectRoom, instantiate, addItem, moveItem, rotateItem,
-   * removeItem. See docs/site/ARCHITECTURE.md §5, §7.
-   * ===================================================================*/
-
-  /** selectRoom : RoomPreset -> Layout (drops items that no longer fit, notifies) */
-  function selectRoom(presetId) {
-    var preset = roomPreset(presetId);
-    if (!preset) return;
-    var newRoom = { presetId: preset.id, widthFt: preset.widthFt, heightFt: preset.heightFt };
-    var kept = [];
-    var droppedCount = 0;
-    var probe = { room: newRoom, items: [] };
-    state.layout.items.forEach(function (item) {
-      if (withinBounds(probe, item) && !hasCollision(probe, item, item.id)) {
-        probe.items.push(item);
-        kept.push(item);
-      } else {
-        droppedCount++;
-      }
-    });
-    state.layout.room = newRoom;
-    state.layout.items = kept;
-    if (droppedCount > 0) {
-      showNotice(droppedCount + " item" + (droppedCount === 1 ? "" : "s") +
-        " removed — didn't fit the new room size.");
-    }
-  }
-
-  function instantiate(entry, x, y) {
-    return {
-      id: "item-" + (nextId++),
-      type: entry.type,
-      x: x, y: y,
-      w: entry.w, h: entry.h,
-      rotation: 0
-    };
-  }
-
-  /** addItem : (Layout, FurnitureCatalogEntry, x, y) -> Layout (Total, clamped, hard-reject overlap) */
-  function addItem(layout, entry, x, y) {
-    var item = instantiate(entry, x, y);
-    item.x = Math.max(0, Math.min(item.x, layout.room.widthFt - item.w));
-    item.y = Math.max(0, Math.min(item.y, layout.room.heightFt - item.h));
-    if (!placementValid(layout, item, null)) return false;
-    layout.items.push(item);
-    return true;
-  }
-
-  /** findFreeSlot : (Layout, FurnitureCatalogEntry) -> {x,y} | null — for click-to-place */
-  function findFreeSlot(layout, entry) {
-    for (var y = 0; y <= layout.room.heightFt - entry.h; y++) {
-      for (var x = 0; x <= layout.room.widthFt - entry.w; x++) {
-        var candidate = { x: x, y: y, w: entry.w, h: entry.h };
-        if (placementValid(layout, candidate, null)) return { x: x, y: y };
-      }
-    }
-    return null;
-  }
-
-  /** moveItem : (Layout, id, x, y) -> Layout (Partial: no-op if invalid) */
-  function moveItem(layout, id, x, y) {
-    var item = findItem(layout, id);
-    if (!item) return;
-    var candidate = { x: x, y: y, w: item.w, h: item.h };
-    if (!placementValid(layout, candidate, id)) return;
-    item.x = x; item.y = y;
-  }
-
-  /** rotateItem : (Layout, id) -> Layout (Partial: no-op if invalid after swap) */
-  function rotateItem(layout, id) {
-    var item = findItem(layout, id);
-    if (!item) return;
-    var swapped = { x: item.x, y: item.y, w: item.h, h: item.w };
-    if (!placementValid(layout, swapped, id)) return;
-    var tmp = item.w; item.w = item.h; item.h = tmp;
-    item.rotation = (item.rotation + 90) % 180;
-  }
-
-  /** removeItem : (Layout, id) -> Layout (Partial: no-op if id absent) */
-  function removeItem(layout, id) {
-    var idx = -1;
-    for (var i = 0; i < layout.items.length; i++) {
-      if (layout.items[i].id === id) { idx = i; break; }
-    }
-    if (idx === -1) return;
-    layout.items.splice(idx, 1);
-  }
-
-  function findItem(layout, id) {
-    for (var i = 0; i < layout.items.length; i++) {
-      if (layout.items[i].id === id) return layout.items[i];
-    }
-    return null;
-  }
-
-  /* =====================================================================
-   * Deduced Trn — computeUtilization, computePower, computeSpacing,
-   * computeShoppingList, buildBlueprint. Pure functions of Layout only,
-   * never stored. See docs/site/ARCHITECTURE.md §4, §6.
-   * ===================================================================*/
-
-  /** computeUtilization : Layout -> UtilizationMetrics (Deduced) */
-  function computeUtilization(layout) {
-    var usedSqFt = 0;
-    layout.items.forEach(function (item) { usedSqFt += item.w * item.h; });
-    var totalSqFt = layout.room.widthFt * layout.room.heightFt;
-    var pct = totalSqFt > 0 ? (usedSqFt / totalSqFt) * 100 : 0;
-    return { usedSqFt: usedSqFt, totalSqFt: totalSqFt, pct: pct };
-  }
-
-  /** computePower : Layout -> PowerEstimate (Deduced) */
-  function computePower(layout) {
-    var totalWatts = 0, poweredCount = 0;
-    layout.items.forEach(function (item) {
-      var entry = catalogEntry(item.type);
-      if (entry && entry.watts > 0) { totalWatts += entry.watts; poweredCount++; }
-    });
-    var outlets = poweredCount === 0 ? 0 : Math.max(
-      Math.ceil(poweredCount / OUTLETS_PER_STRIP),
-      Math.ceil(totalWatts / CIRCUIT_WATT_CAP)
-    );
-    return { totalWatts: totalWatts, poweredCount: poweredCount, outlets: outlets };
-  }
-
-  /** computeSpacing : Layout -> SpacingWarnings (Deduced, soft) */
-  function computeSpacing(layout) {
-    var flaggedIds = {};
-    var pairs = [];
-    for (var i = 0; i < layout.items.length; i++) {
-      for (var j = i + 1; j < layout.items.length; j++) {
-        var a = layout.items[i], b = layout.items[j];
-        var ca = catalogEntry(a.type), cb = catalogEntry(b.type);
-        var ea = { x: a.x - ca.clearanceFt, y: a.y - ca.clearanceFt, w: a.w + 2 * ca.clearanceFt, h: a.h + 2 * ca.clearanceFt };
-        var eb = { x: b.x - cb.clearanceFt, y: b.y - cb.clearanceFt, w: b.w + 2 * cb.clearanceFt, h: b.h + 2 * cb.clearanceFt };
-        if ((ca.clearanceFt > 0 || cb.clearanceFt > 0) && overlaps(ea, eb)) {
-          pairs.push([a.id, b.id]);
-          flaggedIds[a.id] = true;
-          flaggedIds[b.id] = true;
-        }
-      }
-    }
-    return { pairs: pairs, flaggedIds: flaggedIds };
-  }
-
-  /** computeShoppingList : Layout -> ShoppingList (Deduced) */
-  function computeShoppingList(layout) {
-    var groups = {};
-    var order = [];
-    layout.items.forEach(function (item) {
-      if (!groups[item.type]) { groups[item.type] = 0; order.push(item.type); }
-      groups[item.type]++;
-    });
-    var rows = order.map(function (type) {
-      var entry = catalogEntry(type);
-      var qty = groups[type];
-      return { type: type, label: entry.label, qty: qty, unitCost: entry.costUsd, subtotal: qty * entry.costUsd };
-    });
-    var total = rows.reduce(function (sum, r) { return sum + r.subtotal; }, 0);
-    return { rows: rows, total: total };
-  }
-
-  /** buildBlueprint : Layout -> Blueprint (Deduced snapshot of everything above) */
-  function buildBlueprint(layout) {
-    return {
-      room: Object.assign({}, layout.room),
-      items: layout.items.map(function (i) { return Object.assign({}, i); }),
-      utilization: computeUtilization(layout),
-      power: computePower(layout),
-      spacing: computeSpacing(layout),
-      shoppingList: computeShoppingList(layout),
-      exportedAt: new Date().toISOString()
-    };
-  }
-
-  /* =====================================================================
-   * serialize / deserialize (ARCHITECTURE.md §4, §9 Law 5: round-trip).
-   * ===================================================================*/
-
-  /** serialize : Layout -> StoredLayoutJSON (Total) */
-  function serialize(layout) {
-    return JSON.stringify(layout);
-  }
-
-  /** deserialize : StoredLayoutJSON -> Layout (Partial: falls back to default) */
-  function deserialize(json) {
-    try {
-      var parsed = JSON.parse(json);
-      if (!parsed || !parsed.room || !roomPreset(parsed.room.presetId) || !Array.isArray(parsed.items)) {
-        throw new Error("malformed layout");
-      }
-      var candidate = { room: parsed.room, items: [] };
-      for (var i = 0; i < parsed.items.length; i++) {
-        var it = parsed.items[i];
-        if (typeof it.x !== "number" || typeof it.y !== "number" ||
-            typeof it.w !== "number" || typeof it.h !== "number" ||
-            !catalogEntry(it.type)) {
-          throw new Error("malformed item");
-        }
-        if (!withinBounds(candidate, it) || hasCollision(candidate, it, it.id)) {
-          throw new Error("invariant violated");
-        }
-        candidate.items.push(it);
-        var maxId = parseInt(String(it.id).replace("item-", ""), 10);
-        if (!isNaN(maxId) && maxId >= nextId) nextId = maxId + 1;
-      }
-      return candidate;
-    } catch (e) {
-      return defaultLayout();
-    }
-  }
-
-  /* =====================================================================
-   * Trm — persist / restore / downloadBlueprint. The only functions that
-   * cross a Loc boundary. See docs/site/ARCHITECTURE.md §7, §9 Law 2.
-   * ===================================================================*/
-
-  /** persist : Layout(runtime) -> StoredLayoutJSON(localStorage) */
-  function persist(layout) {
-    try { window.localStorage.setItem(STORAGE_KEY, serialize(layout)); }
-    catch (e) { /* storage unavailable — degrade silently, PoC-level */ }
-  }
-
-  /** restore : StoredLayoutJSON(localStorage) -> Layout(runtime) */
-  function restore() {
-    var raw = null;
-    try { raw = window.localStorage.getItem(STORAGE_KEY); }
-    catch (e) { return defaultLayout(); }
-    if (!raw) return defaultLayout();
-    return deserialize(raw);
-  }
-
-  /* =====================================================================
-   * Trm — Supabase Auth + Postgres. New Loc introduced by
-   * add-user-auth-persistence: a Supabase-hosted Auth/Postgres service,
-   * reached only via the JS SDK + anon key, access controlled by RLS.
-   * See docs/site/ARCHITECTURE.md (post-add-user-auth-persistence).
-   * ===================================================================*/
-
-  var supabaseClient = (window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY)
-    ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
-    : null;
-
-  var currentUser = null;
-
-  /** signUp : (email, password) -> User (Trm, partial: fails on duplicate/weak password) */
-  function signUp(email, password) {
-    if (!supabaseClient) return Promise.reject(new Error("Auth is not configured."));
-    return supabaseClient.auth.signUp({ email: email, password: password }).then(function (res) {
-      if (res.error) throw res.error;
-      return res.data.user;
-    });
-  }
-
-  /** signIn : (email, password) -> User (Trm, partial: fails on bad credentials) */
-  function signIn(email, password) {
-    if (!supabaseClient) return Promise.reject(new Error("Auth is not configured."));
-    return supabaseClient.auth.signInWithPassword({ email: email, password: password }).then(function (res) {
-      if (res.error) throw res.error;
-      return res.data.user;
-    });
-  }
-
-  /** signOut : User -> () (Trm, total) */
-  function signOut() {
-    if (!supabaseClient) return Promise.resolve();
-    return supabaseClient.auth.signOut();
-  }
-
-  /** saveLayoutForUser : (User, Layout) -> StoredLayoutRow (Trm, partial: fails if unreachable) */
-  function saveLayoutForUser(user, layout) {
-    if (!supabaseClient || !user) return Promise.reject(new Error("Not signed in."));
-    return supabaseClient.from("layouts").upsert({
-      user_id: user.id,
-      layout: JSON.parse(serialize(layout)),
-      updated_at: new Date().toISOString()
-    }).then(function (res) {
-      if (res.error) throw res.error;
-    });
-  }
-
-  /** loadLayoutForUser : User -> Layout (Trm, partial: falls back to default on no row) */
-  function loadLayoutForUser(user) {
-    if (!supabaseClient || !user) return Promise.resolve(defaultLayout());
-    return supabaseClient.from("layouts").select("layout").eq("user_id", user.id).maybeSingle()
-      .then(function (res) {
-        if (res.error) throw res.error;
-        if (!res.data || !res.data.layout) return defaultLayout();
-        return deserialize(JSON.stringify(res.data.layout));
-      });
-  }
-
-  /**
-   * layoutStore — port isolating storage effects (design.md Decision 4).
-   * addItem/moveItem/... and renderGrid never learn whether storage is
-   * localStorage or Supabase; they only ever call layoutStore.save/load.
-   */
-  var layoutStore = {
-    save: function (layout) {
-      if (currentUser) {
-        saveLayoutForUser(currentUser, layout).catch(function () {
-          showNotice("Couldn't save to your account — check your connection. Your change is still shown here.");
-        });
-      } else {
-        persist(layout);
-      }
-    },
-    load: function () {
-      return currentUser ? loadLayoutForUser(currentUser) : Promise.resolve(restore());
-    }
-  };
-
-  /** downloadBlueprint : Blueprint(runtime) -> JSON file(downloads) */
-  function downloadBlueprint(blueprint) {
-    var blob = new Blob([JSON.stringify(blueprint, null, 2)], { type: "application/json" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = "spatialflow-blueprint-" + blueprint.room.presetId + ".json";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-  }
-
-  /* =====================================================================
-   * DOM refs
-   * ===================================================================*/
-
-  var boardEl = document.getElementById("board");
-  var catalogListEl = document.getElementById("catalog-list");
-  var roomPresetsEl = document.getElementById("room-presets");
-  var roomDimsLabelEl = document.getElementById("room-dims-label");
-  var itemCountLabelEl = document.getElementById("item-count-label");
-  var noticeEl = document.getElementById("canvas-notice");
-
-  var utilPctEl = document.getElementById("metric-util-pct");
-  var utilBarEl = document.getElementById("metric-util-bar");
-  var utilDetailEl = document.getElementById("metric-util-detail");
-  var wattsEl = document.getElementById("metric-watts");
-  var outletsEl = document.getElementById("metric-outlets");
-  var spacingCardEl = document.getElementById("spacing-card");
-  var spacingTextEl = document.getElementById("metric-spacing");
-
-  var shoppingBodyEl = document.getElementById("shopping-list-body");
-  var shoppingEmptyEl = document.getElementById("shopping-list-empty");
-  var shoppingTotalEl = document.getElementById("shopping-list-total");
-  var btnExportEl = document.getElementById("btn-export");
-
-  var modalEl = document.getElementById("export-modal");
-  var modalSummaryEl = document.getElementById("modal-summary");
-  var btnDownloadJsonEl = document.getElementById("btn-download-json");
-
-  var CELL_MIN = 26, CELL_MAX = 56;
-
-  function showNotice(msg) {
-    if (noticeTimer) clearTimeout(noticeTimer);
-    noticeEl.textContent = msg;
-    noticeEl.classList.remove("hidden");
-    noticeTimer = setTimeout(function () { noticeEl.classList.add("hidden"); }, 4500);
-  }
-
-  /* =====================================================================
-   * renderGrid : Layout -> DOM
-   * ===================================================================*/
-
-  function cellSizePx() {
-    var wrap = boardEl.parentElement;
-    var available = wrap.clientWidth - 16; // minus canvas padding
-    var byWidth = Math.floor(available / state.layout.room.widthFt);
-    return Math.max(CELL_MIN, Math.min(CELL_MAX, byWidth));
-  }
-
-  function renderGrid(spacing) {
-    var layout = state.layout;
-    var cellPx = cellSizePx();
-    boardEl.style.width = (layout.room.widthFt * cellPx) + "px";
-    boardEl.style.height = (layout.room.heightFt * cellPx) + "px";
-    boardEl.style.backgroundSize = cellPx + "px " + cellPx + "px";
-    boardEl.innerHTML = "";
-
-    layout.items.forEach(function (item) {
-      var entry = catalogEntry(item.type);
-      var el = document.createElement("div");
-      el.className = "placed-item absolute rounded-md shadow-sm overflow-hidden cursor-grab select-none";
-      if (spacing.flaggedIds[item.id]) el.classList.add("spacing-warning");
-      el.dataset.id = item.id;
-      el.style.left = (item.x * cellPx) + "px";
-      el.style.top = (item.y * cellPx) + "px";
-      el.style.width = (item.w * cellPx) + "px";
-      el.style.height = (item.h * cellPx) + "px";
-      el.style.background = entry.color;
-
-      var itemImg = document.createElement("img");
-      itemImg.src = entry.image;
-      itemImg.alt = "";
-      itemImg.className = "absolute inset-0 w-full h-full object-cover pointer-events-none";
-
-      var caption = document.createElement("div");
-      caption.className = "absolute inset-x-0 bottom-0 bg-black/55 text-white text-[10px] font-medium text-center leading-tight px-1 py-0.5 truncate pointer-events-none";
-      caption.textContent = entry.label;
-
-      var fallback = document.createElement("div");
-      fallback.className = "absolute inset-0 hidden flex-col items-center justify-center text-white text-[11px] font-medium text-center leading-tight px-1 pointer-events-none";
-      fallback.innerHTML = '<i data-lucide="' + entry.icon + '" class="w-4 h-4 mb-0.5"></i><span>' + entry.label + '</span>';
-
-      itemImg.onerror = function () {
-        itemImg.remove();
-        caption.remove();
-        fallback.classList.remove("hidden");
-        fallback.classList.add("flex");
-      };
-
-      el.appendChild(itemImg);
-      el.appendChild(caption);
-      el.appendChild(fallback);
-
-      var controls = document.createElement("div");
-      controls.className = "absolute -top-3 -right-2 flex gap-1";
-
-      var rotateBtn = document.createElement("button");
-      rotateBtn.className = "w-6 h-6 rounded-full bg-white border border-stone-300 shadow-sm flex items-center justify-center text-stone-600 hover:bg-stone-50 transition-colors";
-      rotateBtn.innerHTML = '<i data-lucide="rotate-cw" class="w-3 h-3 pointer-events-none"></i>';
-      rotateBtn.title = "Rotate";
-      rotateBtn.addEventListener("click", function (ev) {
-        ev.stopPropagation();
-        rotateItem(state.layout, item.id);
-        afterEdit();
-      });
-
-      var removeBtn = document.createElement("button");
-      removeBtn.className = "w-6 h-6 rounded-full bg-white border border-stone-300 shadow-sm flex items-center justify-center text-stone-600 hover:bg-red-50 hover:text-red-600 transition-colors";
-      removeBtn.innerHTML = '<i data-lucide="x" class="w-3 h-3 pointer-events-none"></i>';
-      removeBtn.title = "Remove";
-      removeBtn.addEventListener("click", function (ev) {
-        ev.stopPropagation();
-        removeItem(state.layout, item.id);
-        afterEdit();
-      });
-
-      controls.appendChild(rotateBtn);
-      controls.appendChild(removeBtn);
-      el.appendChild(controls);
-
-      attachPlacedItemDrag(el, item.id, cellPx);
-      boardEl.appendChild(el);
-    });
-
-    roomDimsLabelEl.textContent = layout.room.widthFt + " × " + layout.room.heightFt + " ft floor plan";
-    itemCountLabelEl.textContent = layout.items.length + " item" + (layout.items.length === 1 ? "" : "s") + " placed";
-  }
-
-  function renderRoomPresets() {
-    roomPresetsEl.innerHTML = "";
-    ROOM_PRESETS.forEach(function (preset) {
-      var btn = document.createElement("button");
-      var active = state.layout.room.presetId === preset.id;
-      btn.className = "rounded-full px-4 py-2 text-sm font-medium border transition-colors " +
-        (active
-          ? "bg-stone-900 text-white border-stone-900"
-          : "bg-white text-stone-600 border-stone-300 hover:border-stone-400 hover:bg-stone-50");
-      btn.textContent = preset.label;
-      btn.addEventListener("click", function () {
-        if (state.layout.room.presetId === preset.id) return;
-        selectRoom(preset.id);
-        afterEdit();
-      });
-      roomPresetsEl.appendChild(btn);
-    });
-  }
-
-  function renderCatalog() {
-    catalogListEl.innerHTML = "";
-    FURNITURE_CATALOG.forEach(function (entry) {
-      var el = document.createElement("div");
-      el.className = "catalog-item flex-shrink-0 w-44 lg:w-auto flex items-center gap-3 rounded-lg border border-stone-200 bg-white px-3 py-2.5 cursor-grab hover:border-wood-300 hover:shadow-soft transition-all";
-
-      var swatch = document.createElement("div");
-      swatch.className = "w-9 h-9 rounded-md flex-shrink-0 relative overflow-hidden text-white";
-      swatch.style.background = entry.color;
-
-      var swatchImg = document.createElement("img");
-      swatchImg.src = entry.image;
-      swatchImg.alt = "";
-      swatchImg.className = "absolute inset-0 w-full h-full object-cover";
-      var swatchFallback = document.createElement("div");
-      swatchFallback.className = "absolute inset-0 hidden items-center justify-center";
-      swatchFallback.innerHTML = '<i data-lucide="' + entry.icon + '" class="pointer-events-none" style="width:18px;height:18px"></i>';
-      swatchImg.onerror = function () {
-        swatchImg.remove();
-        swatchFallback.classList.remove("hidden");
-        swatchFallback.classList.add("flex");
-      };
-      swatch.appendChild(swatchImg);
-      swatch.appendChild(swatchFallback);
-
-      var info = document.createElement("div");
-      info.className = "min-w-0";
-      var label = document.createElement("div");
-      label.className = "text-sm font-medium text-stone-800 truncate";
-      label.textContent = entry.label;
-      var meta = document.createElement("div");
-      meta.className = "text-xs text-stone-400 flex items-center gap-1.5";
-      meta.innerHTML = entry.w + "×" + entry.h + " ft &middot; $" + entry.costUsd +
-        (entry.watts > 0 ? ' &middot; <span class="text-wood-600">' + entry.watts + "W</span>" : "");
-      info.appendChild(label);
-      info.appendChild(meta);
-
-      el.appendChild(swatch);
-      el.appendChild(info);
-      attachCatalogDrag(el, entry);
-      catalogListEl.appendChild(el);
-    });
-  }
-
-  function renderMetrics() {
-    var layout = state.layout;
-    var util = computeUtilization(layout);
-    var power = computePower(layout);
-    var spacing = computeSpacing(layout);
-    var shopping = computeShoppingList(layout);
-
-    utilPctEl.textContent = Math.round(util.pct) + "%";
-    utilBarEl.style.width = Math.min(100, util.pct) + "%";
-    utilDetailEl.textContent = util.usedSqFt + " / " + util.totalSqFt + " sq ft used";
-
-    wattsEl.textContent = power.totalWatts + " W";
-    outletsEl.textContent = power.outlets + " outlet" + (power.outlets === 1 ? "" : "s") +
-      " estimated (" + power.poweredCount + " powered item" + (power.poweredCount === 1 ? "" : "s") + ")";
-
-    if (spacing.pairs.length > 0) {
-      spacingCardEl.classList.remove("border-stone-200", "bg-stone-50");
-      spacingCardEl.classList.add("border-amber-300", "bg-amber-50");
-      spacingTextEl.className = "text-sm text-amber-700";
-      spacingTextEl.textContent = spacing.pairs.length + " item pair" + (spacing.pairs.length === 1 ? "" : "s") +
-        " closer than recommended clearance — layout still allowed.";
-    } else {
-      spacingCardEl.classList.add("border-stone-200", "bg-stone-50");
-      spacingCardEl.classList.remove("border-amber-300", "bg-amber-50");
-      spacingTextEl.className = "text-sm text-stone-500";
-      spacingTextEl.textContent = "All clearances look good.";
-    }
-
-    shoppingBodyEl.innerHTML = "";
-    if (shopping.rows.length === 0) {
-      shoppingEmptyEl.classList.remove("hidden");
-      btnExportEl.setAttribute("disabled", "disabled");
-    } else {
-      shoppingEmptyEl.classList.add("hidden");
-      btnExportEl.removeAttribute("disabled");
-      shopping.rows.forEach(function (row) {
-        var rowEntry = catalogEntry(row.type);
-        var tr = document.createElement("tr");
-        tr.innerHTML =
-          '<td class="px-5 py-3 text-stone-700">' +
-            '<div class="flex items-center gap-2.5">' +
-              '<img src="' + rowEntry.image + '" alt="" class="w-8 h-8 rounded object-cover flex-shrink-0 bg-stone-100" onerror="this.remove()">' +
-              '<span>' + row.label + '</span>' +
-            '</div>' +
-          '</td>' +
-          '<td class="px-3 py-3 text-center text-stone-500">' + row.qty + '</td>' +
-          '<td class="px-3 py-3 text-right text-stone-500">$' + row.unitCost.toLocaleString() + '</td>' +
-          '<td class="px-5 py-3 text-right font-medium text-stone-800">$' + row.subtotal.toLocaleString() + '</td>';
-        shoppingBodyEl.appendChild(tr);
-      });
-    }
-    shoppingTotalEl.textContent = "$" + shopping.total.toLocaleString();
-
-    return spacing;
-  }
-
-  function afterEdit() {
-    layoutStore.save(state.layout);
-    var spacing = renderMetrics();
-    renderRoomPresets();
-    renderGrid(spacing);
-    if (window.lucide) window.lucide.createIcons();
-  }
-
-  /* =====================================================================
-   * Pointer-driven interaction: click-to-place (default, touch-friendly)
-   * and pointer-drag (desktop precision). Native Pointer Events only —
-   * no external drag library, per design.md.
-   * ===================================================================*/
-
-  function attachCatalogDrag(el, entry) {
-    el.addEventListener("pointerdown", function (downEv) {
-      downEv.preventDefault();
-      var startX = downEv.clientX, startY = downEv.clientY;
-      var dragging = false;
-      var ghost = null;
-
-      function ensureGhost(clientX, clientY) {
-        if (ghost) return;
-        ghost = document.createElement("div");
-        ghost.className = "drag-ghost rounded-md overflow-hidden";
-        ghost.style.width = (entry.w * 36) + "px";
-        ghost.style.height = (entry.h * 36) + "px";
-        ghost.style.background = entry.color;
-        var ghostImg = document.createElement("img");
-        ghostImg.src = entry.image;
-        ghostImg.alt = "";
-        ghostImg.className = "absolute inset-0 w-full h-full object-cover pointer-events-none";
-        var ghostFallback = document.createElement("div");
-        ghostFallback.className = "absolute inset-0 flex items-center justify-center text-white text-xs font-medium hidden";
-        ghostFallback.textContent = entry.label;
-        ghostImg.onerror = function () {
-          ghostImg.remove();
-          ghostFallback.classList.remove("hidden");
-          ghostFallback.classList.add("flex");
-        };
-        ghost.appendChild(ghostImg);
-        ghost.appendChild(ghostFallback);
-        document.body.appendChild(ghost);
-        moveGhost(clientX, clientY);
-      }
-      function moveGhost(clientX, clientY) {
-        if (!ghost) return;
-        ghost.style.left = clientX + "px";
-        ghost.style.top = clientY + "px";
-      }
-      function onMove(ev) {
-        if (!dragging && (Math.abs(ev.clientX - startX) > 5 || Math.abs(ev.clientY - startY) > 5)) {
-          dragging = true;
-        }
-        if (dragging) { ensureGhost(ev.clientX, ev.clientY); moveGhost(ev.clientX, ev.clientY); }
-      }
-      function onUp(ev) {
-        document.removeEventListener("pointermove", onMove);
-        document.removeEventListener("pointerup", onUp);
-        if (ghost) ghost.remove();
-
-        if (dragging) {
-          var rect = boardEl.getBoundingClientRect();
-          if (ev.clientX >= rect.left && ev.clientX <= rect.right &&
-              ev.clientY >= rect.top && ev.clientY <= rect.bottom) {
-            var cellPx = cellSizePx();
-            var cellX = Math.floor((ev.clientX - rect.left) / cellPx);
-            var cellY = Math.floor((ev.clientY - rect.top) / cellPx);
-            if (!addItem(state.layout, entry, cellX, cellY)) {
-              flashInvalid();
-            }
-            afterEdit();
-          }
-        } else {
-          // click-to-place: drop into the first free slot
-          var slot = findFreeSlot(state.layout, entry);
-          if (slot) {
-            addItem(state.layout, entry, slot.x, slot.y);
-            afterEdit();
-          } else {
-            flashInvalid();
-          }
-        }
-      }
-      document.addEventListener("pointermove", onMove);
-      document.addEventListener("pointerup", onUp);
-    });
-  }
-
-  function flashInvalid() {
-    showNotice("No room for that item — try removing something or picking a larger room.");
-  }
-
-  function attachPlacedItemDrag(el, id, cellPx) {
-    el.addEventListener("pointerdown", function (downEv) {
-      if (downEv.target !== el && downEv.target.tagName !== "SPAN") return; // ignore button clicks
-      downEv.preventDefault();
-      var rect = boardEl.getBoundingClientRect();
-
-      function onMove(ev) {
-        var liveCellPx = cellSizePx();
-        var cellX = Math.floor((ev.clientX - rect.left) / liveCellPx);
-        var cellY = Math.floor((ev.clientY - rect.top) / liveCellPx);
-        var item = findItem(state.layout, id);
-        if (!item) return;
-        var candidate = { x: cellX, y: cellY, w: item.w, h: item.h };
-        el.style.left = (cellX * liveCellPx) + "px";
-        el.style.top = (cellY * liveCellPx) + "px";
-        el.classList.toggle("ring-2", !placementValid(state.layout, candidate, id));
-        el.classList.toggle("ring-red-400", !placementValid(state.layout, candidate, id));
-      }
-      function onUp(ev) {
-        document.removeEventListener("pointermove", onMove);
-        document.removeEventListener("pointerup", onUp);
-        var liveCellPx = cellSizePx();
-        var cellX = Math.floor((ev.clientX - rect.left) / liveCellPx);
-        var cellY = Math.floor((ev.clientY - rect.top) / liveCellPx);
-        moveItem(state.layout, id, cellX, cellY);
-        afterEdit();
-      }
-      document.addEventListener("pointermove", onMove);
-      document.addEventListener("pointerup", onUp);
-    });
-  }
-
-  /* =====================================================================
-   * Export modal
-   * ===================================================================*/
-
-  function openExportModal() {
-    var blueprint = buildBlueprint(state.layout);
-    modalSummaryEl.innerHTML = "";
-    var rows = [
-      ["Room size", blueprint.room.widthFt + " × " + blueprint.room.heightFt + " ft"],
-      ["Items placed", String(blueprint.items.length)],
-      ["Space utilization", Math.round(blueprint.utilization.pct) + "%"],
-      ["Estimated power", blueprint.power.totalWatts + " W / " + blueprint.power.outlets + " outlets"],
-      ["Spacing warnings", String(blueprint.spacing.pairs.length)],
-      ["Estimated total cost", "$" + blueprint.shoppingList.total.toLocaleString()]
-    ];
-    rows.forEach(function (pair) {
-      var dt = document.createElement("dt");
-      dt.className = "text-stone-400";
-      dt.textContent = pair[0];
-      var dd = document.createElement("dd");
-      dd.className = "text-right font-medium text-stone-800";
-      dd.textContent = pair[1];
-      modalSummaryEl.appendChild(dt);
-      modalSummaryEl.appendChild(dd);
-    });
-
-    modalEl.classList.remove("hidden");
-    modalEl.classList.add("is-open");
-    btnDownloadJsonEl.onclick = function () { downloadBlueprint(blueprint); };
-    if (window.lucide) window.lucide.createIcons();
-  }
-
-  function closeExportModal() {
-    modalEl.classList.add("hidden");
-    modalEl.classList.remove("is-open");
-  }
-
-  /* =====================================================================
-   * Auth UI — sign-up/sign-in/sign-out. Lives in #site-nav, outside
-   * #planner's dynamic subtree (planner-fence invariant, ARCHITECTURE.md
-   * §10). Signing in/out only ever calls layoutStore/afterEdit, exactly
-   * like a room-preset switch — no new render path.
-   * ===================================================================*/
-
-  var authModalEl = document.getElementById("auth-modal");
-  var authFormEl = document.getElementById("auth-form");
-  var authEmailEl = document.getElementById("auth-email");
-  var authPasswordEl = document.getElementById("auth-password");
-  var authErrorEl = document.getElementById("auth-error");
-  var authInfoEl = document.getElementById("auth-info");
-  var authSubmitEl = document.getElementById("btn-auth-submit");
-  var authSignedOutEl = document.getElementById("auth-signed-out");
-  var authSignedInEl = document.getElementById("auth-signed-in");
-  var authUserEmailEl = document.getElementById("auth-user-email");
-  var authMode = "signin";
-
-  function updateAuthUI() {
-    if (currentUser) {
-      authSignedOutEl.classList.add("hidden");
-      authSignedInEl.classList.remove("hidden");
-      authSignedInEl.classList.add("flex");
-      authUserEmailEl.textContent = currentUser.email;
-    } else {
-      authSignedOutEl.classList.remove("hidden");
-      authSignedInEl.classList.add("hidden");
-      authSignedInEl.classList.remove("flex");
-    }
-  }
-
-  function renderAuthModalMode() {
-    var isSignUp = authMode === "signup";
-    document.getElementById("auth-modal-title").textContent = isSignUp ? "Sign up" : "Sign in";
-    authSubmitEl.textContent = isSignUp ? "Sign Up" : "Sign In";
-    document.getElementById("auth-toggle-prompt").textContent =
-      isSignUp ? "Already have an account?" : "Don't have an account?";
-    document.getElementById("btn-auth-toggle-mode").textContent = isSignUp ? "Sign in" : "Sign up";
-    authPasswordEl.setAttribute("autocomplete", isSignUp ? "new-password" : "current-password");
-  }
-
-  function openAuthModal(mode) {
-    authMode = mode;
-    renderAuthModalMode();
-    authErrorEl.classList.add("hidden");
-    authInfoEl.classList.add("hidden");
-    authFormEl.reset();
-    authModalEl.classList.remove("hidden");
-    authModalEl.classList.add("is-open");
-    authEmailEl.focus();
-  }
-
-  function closeAuthModal() {
-    authModalEl.classList.add("hidden");
-    authModalEl.classList.remove("is-open");
-  }
-
-  document.getElementById("btn-nav-signin").addEventListener("click", function () { openAuthModal("signin"); });
-  document.getElementById("btn-nav-signup").addEventListener("click", function () { openAuthModal("signup"); });
-  document.getElementById("btn-nav-signout").addEventListener("click", function () {
-    signOut().then(function () {
-      currentUser = null;
-      updateAuthUI();
-      bootLayout();
-    });
-  });
-  document.getElementById("btn-auth-modal-close").addEventListener("click", closeAuthModal);
-  document.getElementById("auth-modal-backdrop").addEventListener("click", closeAuthModal);
-  document.getElementById("btn-auth-toggle-mode").addEventListener("click", function () {
-    openAuthModal(authMode === "signup" ? "signin" : "signup");
-  });
-
-  authFormEl.addEventListener("submit", function (ev) {
-    ev.preventDefault();
-    authErrorEl.classList.add("hidden");
-    authInfoEl.classList.add("hidden");
-    authSubmitEl.setAttribute("disabled", "disabled");
-
-    var email = authEmailEl.value.trim();
-    var password = authPasswordEl.value;
-    var action = authMode === "signup" ? signUp(email, password) : signIn(email, password);
-
-    action.then(function (user) {
-      currentUser = user;
-      updateAuthUI();
-      bootLayout();
-      authSubmitEl.removeAttribute("disabled");
-      if (authMode === "signup") {
-        authInfoEl.textContent = "Account created. You're signed in.";
-        authInfoEl.classList.remove("hidden");
-        setTimeout(closeAuthModal, 900);
-      } else {
-        closeAuthModal();
-      }
-    }).catch(function (err) {
-      authSubmitEl.removeAttribute("disabled");
-      authErrorEl.textContent = (err && err.message) ||
-        (authMode === "signup" ? "Couldn't create that account." : "Incorrect email or password.");
-      authErrorEl.classList.remove("hidden");
-    });
-  });
-
-  /* =====================================================================
-   * Presentation layer — cinematic scroll scenes (redesign-jesko-aesthetic)
-   * Only reads scroll/intersection signals and toggles classes on
-   * marketing-shell nodes; never reads or writes `state`/`Layout`, never
-   * runs inside #planner's dynamic subtree. See ARCHITECTURE.md §10.
-   * ===================================================================*/
-
-  var prefersReducedMotion = window.matchMedia &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  function initScrollReveal() {
-    var nodes = document.querySelectorAll("[data-reveal]");
-    if (!nodes.length) return;
-
-    if (prefersReducedMotion) {
-      nodes.forEach(function (n) { n.classList.add("is-revealed"); });
-      return;
-    }
-    // IntersectionObserver is the primary driver (CSS `animation-timeline:
-    // view()` was removed — it left the final screenful stuck hidden).
-    if (!("IntersectionObserver" in window)) {
-      nodes.forEach(function (n) { n.classList.add("is-revealed"); });
-      return;
-    }
-    var observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add("is-revealed");
-        observer.unobserve(entry.target);
-      });
-    }, { threshold: 0.15 });
-    nodes.forEach(function (n) { observer.observe(n); });
-  }
-
-  function initHeroZoom() {
-    // Progressive enhancement only: the hero is fully legible at scale(1).
-    if (prefersReducedMotion) return;
-    var portal = document.querySelector(".hero-portal");
-    var hero = portal && portal.closest("section");
-    if (!portal || !hero) return;
-
-    var ticking = false;
-    function update() {
-      ticking = false;
-      var h = hero.offsetHeight || window.innerHeight;
-      // progress 0 → 1 across the first ~65% of the hero's scroll runway
-      var p = Math.min(1, Math.max(0, window.scrollY / (h * 0.65)));
-      var scale = 1 + p * 1.6;      // up to 2.6×, matching the intended zoom
-      var fade = 1 - p * 0.9;       // portal recedes as the page takes over
-      portal.style.transform = "scale(" + scale.toFixed(3) + ")";
-      portal.style.opacity = fade.toFixed(3);
-    }
-    function onScroll() {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(update);
-    }
-    window.addEventListener("scroll", onScroll, { passive: true });
-    update();
-  }
+  if (window.lucide) window.lucide.createIcons();
 
   function initAccordion() {
     var items = document.querySelectorAll(".acc-item");
@@ -1638,58 +495,6 @@
     update();
   }
 
-  /* =====================================================================
-   * Entry point
-   * ===================================================================*/
-
-  document.getElementById("btn-reset").addEventListener("click", function () {
-    state.layout = defaultLayout();
-    afterEdit();
-  });
-  btnExportEl.addEventListener("click", openExportModal);
-  document.getElementById("btn-modal-close").addEventListener("click", closeExportModal);
-  document.getElementById("btn-modal-done").addEventListener("click", closeExportModal);
-  document.getElementById("export-modal-backdrop").addEventListener("click", closeExportModal);
-  document.addEventListener("keydown", function (ev) {
-    if (ev.key === "Escape") closeExportModal();
-  });
-
-  var resizeTimer = null;
-  window.addEventListener("resize", function () {
-    if (resizeTimer) clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(function () { renderGrid(computeSpacing(state.layout)); }, 100);
-  });
-
-  function bootLayout() {
-    layoutStore.load().then(function (layout) {
-      state.layout = layout;
-      afterEdit();
-    });
-  }
-
-  renderCatalog();
-
-  if (supabaseClient) {
-    /* Only drives the one-time initial session restore (task 2.5). Interactive
-     * sign-up/sign-in/sign-out set currentUser synchronously themselves
-     * (see auth-form submit handler and btn-nav-signout above) so a save
-     * immediately after signing in can never race an async auth event and
-     * land in the wrong store (design.md Decision 4 — layoutStore isolation
-     * depends on currentUser always being current at edit time). */
-    supabaseClient.auth.onAuthStateChange(function (event, session) {
-      if (event === "INITIAL_SESSION") {
-        currentUser = session ? session.user : null;
-        updateAuthUI();
-        bootLayout();
-      }
-    });
-  } else {
-    updateAuthUI();
-    bootLayout();
-  }
-
-  initScrollReveal();
-  initHeroZoom();
   initAccordion();
   initNavContrast();
 })();

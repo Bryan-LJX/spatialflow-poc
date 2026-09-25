@@ -8,64 +8,68 @@
 
 | Object | Form / shape | Realised at | State |
 | --- | --- | --- | --- |
-| `RoomPreset` | `{ id, label, widthFt, heightFt }` | `index.html:ROOM_PRESETS` | built |
-| `RoomConfig` | `{ presetId, widthFt, heightFt }` | `index.html:defaultLayout` | built |
-| `FurnitureCatalogEntry` | `{ type, label, icon, w, h, costUsd, watts, clearanceFt, color, image }` | `index.html:FURNITURE_CATALOG` | built |
-| `FurnitureItem` | `{ id, type, x, y, w, h, rotation }` | `index.html:instantiate` | built |
-| `Layout` | `{ room: RoomConfig, items: FurnitureItem[] }` | `index.html:defaultLayout` | built |
-| `StoredLayoutJSON` | `JSON.stringify(Layout)` under `localStorage` key `spatialflow.layout.v2` | `index.html:STORAGE_KEY` | built |
-| `UtilizationMetrics` | `{ usedSqFt, totalSqFt, pct }` | `index.html:computeUtilization` | built |
-| `PowerEstimate` | `{ totalWatts, poweredCount, outlets }` | `index.html:computePower` | built |
-| `SpacingWarnings` | `{ pairs, flaggedIds }` | `index.html:computeSpacing` | built |
-| `ShoppingList` | `{ rows, total }` | `index.html:computeShoppingList` | built |
-| `Blueprint` | `{ room, items, utilization, power, spacing, shoppingList, exportedAt }` | `index.html:buildBlueprint` | built |
+| `RoomPreset` | `{ id, label, widthFt, heightFt }` | `planner.html:ROOM_PRESETS` | built |
+| `RoomConfig` | `{ presetId, widthFt, heightFt }` | `planner.html:defaultLayout` | built |
+| `FurnitureCatalogEntry` | `{ type, label, icon, w, h, costUsd, watts, clearanceFt, color, image }` | `planner.html:FURNITURE_CATALOG` | built |
+| `FurnitureItem` | `{ id, type, x, y, w, h, rotation }` | `planner.html:instantiate` | built |
+| `Layout` | `{ room: RoomConfig, items: FurnitureItem[] }` | `planner.html:defaultLayout` | built |
+| `StoredLayoutJSON` | `JSON.stringify(Layout)` under `localStorage` key `spatialflow.layout.v2` | `planner.html:STORAGE_KEY` | built |
+| `UtilizationMetrics` | `{ usedSqFt, totalSqFt, pct }` | `planner.html:computeUtilization` | built |
+| `PowerEstimate` | `{ totalWatts, poweredCount, outlets }` | `planner.html:computePower` | built |
+| `SpacingWarnings` | `{ pairs, flaggedIds }` | `planner.html:computeSpacing` | built |
+| `ShoppingList` | `{ rows, total }` | `planner.html:computeShoppingList` | built |
+| `Blueprint` | `{ room, items, utilization, power, spacing, shoppingList, exportedAt }` | `planner.html:buildBlueprint` | built |
 | `User` | Supabase Auth user record `{ id, email }` | Supabase Auth service (no local realisation — read from `session.user`) | built |
-| `StoredLayoutRow` | `{ user_id, layout: jsonb, updated_at }` | Supabase Postgres `layouts` table (SQL migration, not `index.html`) | built |
+| `StoredLayoutRow` | `{ user_id, layout: jsonb, updated_at }` | Supabase Postgres `layouts` table (SQL migration, not app code) | built |
 
 ## Morphisms (Trn / relations) → code
 
 | Morphism | Signature | Realising code | State |
 | --- | --- | --- | --- |
-| `selectRoom` | `RoomPreset → RoomConfig` | `index.html:selectRoom` | built |
-| `renderGrid` | `Layout → DOM` | `index.html:renderGrid` | built |
-| `instantiate` | `(FurnitureCatalogEntry, x, y) → FurnitureItem` | `index.html:instantiate` | built |
-| `addItem` | `(Layout, FurnitureCatalogEntry, x, y) → Layout` | `index.html:addItem` | built |
-| `moveItem` | `(Layout, id, x, y) → Layout` | `index.html:moveItem` | built |
-| `rotateItem` | `(Layout, id) → Layout` | `index.html:rotateItem` | built |
-| `removeItem` | `(Layout, id) → Layout` | `index.html:removeItem` | built |
-| `serialize` | `Layout → StoredLayoutJSON` | `index.html:serialize` | built |
-| `deserialize` | `StoredLayoutJSON → Layout` | `index.html:deserialize` | built |
-| `computeUtilization` | `Layout → UtilizationMetrics` | `index.html:computeUtilization` | built |
-| `computePower` | `Layout → PowerEstimate` | `index.html:computePower` | built |
-| `computeSpacing` | `Layout → SpacingWarnings` | `index.html:computeSpacing` | built |
-| `computeShoppingList` | `Layout → ShoppingList` | `index.html:computeShoppingList` | built |
-| `buildBlueprint` | `Layout → Blueprint` | `index.html:buildBlueprint` | built |
-| `persist` (Trm) | `Layout(runtime) → StoredLayoutJSON(localStorage)` | `index.html:persist` | built |
-| `restore` (Trm) | `StoredLayoutJSON(localStorage) → Layout(runtime)` | `index.html:restore` | built |
-| `downloadBlueprint` (Trm) | `Blueprint(runtime) → JSON file(downloads)` | `index.html:downloadBlueprint` | built |
-| `initScrollReveal` (presentation) | `DOM(marketing subtree) → DOM` — IntersectionObserver-driven | `index.html:initScrollReveal` | built |
-| `initHeroZoom` (presentation) | `scroll signal → DOM(hero portal transform)` | `index.html:initHeroZoom` | built |
+| `selectRoom` | `RoomPreset → RoomConfig` | `planner.html:selectRoom` | built |
+| `renderGrid` | `Layout → DOM` | `planner.html:renderGrid` | built |
+| `instantiate` | `(FurnitureCatalogEntry, x, y) → FurnitureItem` | `planner.html:instantiate` | built |
+| `addItem` | `(Layout, FurnitureCatalogEntry, x, y) → Layout` | `planner.html:addItem` | built |
+| `moveItem` | `(Layout, id, x, y) → Layout` | `planner.html:moveItem` | built |
+| `rotateItem` | `(Layout, id) → Layout` | `planner.html:rotateItem` | built |
+| `removeItem` | `(Layout, id) → Layout` | `planner.html:removeItem` | built |
+| `serialize` | `Layout → StoredLayoutJSON` | `planner.html:serialize` | built |
+| `deserialize` | `StoredLayoutJSON → Layout` | `planner.html:deserialize` | built |
+| `computeUtilization` | `Layout → UtilizationMetrics` | `planner.html:computeUtilization` | built |
+| `computePower` | `Layout → PowerEstimate` | `planner.html:computePower` | built |
+| `computeSpacing` | `Layout → SpacingWarnings` | `planner.html:computeSpacing` | built |
+| `computeShoppingList` | `Layout → ShoppingList` | `planner.html:computeShoppingList` | built |
+| `buildBlueprint` | `Layout → Blueprint` | `planner.html:buildBlueprint` | built |
+| `persist` (Trm) | `Layout(runtime) → StoredLayoutJSON(localStorage)` | `planner.html:persist` | built |
+| `restore` (Trm) | `StoredLayoutJSON(localStorage) → Layout(runtime)` | `planner.html:restore` | built |
+| `downloadBlueprint` (Trm) | `Blueprint(runtime) → JSON file(downloads)` | `planner.html:downloadBlueprint` | built |
+| `initScrollReveal` (presentation) | `DOM(marketing subtree) → DOM` — one-shot `ScrollTrigger` per `[data-reveal]` node | `assets/js/marketing-scene.js:initScrollReveal` | built |
+| `initHeroScrub` (presentation) | `scroll signal → DOM(hero portal transform)` — GSAP `ScrollTrigger` (`pin`+`scrub`) | `assets/js/marketing-scene.js:initHeroScrub` | built |
+| `initHeroScene` (presentation) | `scroll progress → WebGL canvas` — Three.js scene, feature-detected, paused off-screen | `assets/js/marketing-scene.js:initHeroScene` | built |
+| `initLenis` (presentation) | `wheel/touch input → smoothed scroll position` | `assets/js/marketing-scene.js:initLenis` | built |
 | `initAccordion` (presentation) | `click → DOM(.acc-item.is-open)` | `index.html:initAccordion` | built |
 | `initNavContrast` (presentation) | `scroll signal → DOM(#site-nav.nav-dark)` | `index.html:initNavContrast` | built |
-| `signUp` (Trm) | `(email, password) → User` | `index.html:signUp` | built |
-| `signIn` (Trm) | `(email, password) → User` | `index.html:signIn` | built |
-| `signOut` (Trm) | `User → ()` | `index.html:signOut` | built |
-| `saveLayoutForUser` (Trm) | `(User, Layout) → StoredLayoutRow` | `index.html:saveLayoutForUser` | built |
-| `loadLayoutForUser` (Trm) | `User → Layout` | `index.html:loadLayoutForUser` | built |
-| `layoutStore` (port) | `save: Layout → ()`, `load: () → Promise<Layout>` — dispatches to `persist`/`restore` or `saveLayoutForUser`/`loadLayoutForUser` by `currentUser` | `index.html:layoutStore` | built |
-| `updateAuthUI` (presentation) | `User? → DOM(#auth-widget)` | `index.html:updateAuthUI` | built |
-| `bootLayout` (Trn) | `() → Layout` via `layoutStore.load`, then `afterEdit` | `index.html:bootLayout` | built |
+| `signUp` (Trm) | `(email, password) → User` | `assets/js/site-auth.js:signUp` | built |
+| `signIn` (Trm) | `(email, password) → User` | `assets/js/site-auth.js:signIn` | built |
+| `signOut` (Trm) | `User → ()` | `assets/js/site-auth.js:signOut` | built |
+| `getCurrentUser` | `() → User \| null` | `assets/js/site-auth.js:getCurrentUser` | built |
+| `onAuthChange` | `(User \| null → ()) → ()` — listener registration, fires on every identity change | `assets/js/site-auth.js:onAuthChange` | built |
+| `renderAuthNav` (presentation) | `DOM(nav root) → DOM` — wires the nav auth widget + shared auth modal | `assets/js/site-auth.js:renderAuthNav` | built |
+| `saveLayoutForUser` (Trm) | `(User, Layout) → StoredLayoutRow` | `planner.html:saveLayoutForUser` | built |
+| `loadLayoutForUser` (Trm) | `User → Layout` | `planner.html:loadLayoutForUser` | built |
+| `layoutStore` (port) | `save: Layout → ()`, `load: () → Promise<Layout>` — dispatches to `persist`/`restore` or `saveLayoutForUser`/`loadLayoutForUser` by `getCurrentUser()` | `planner.html:layoutStore` | built |
+| `bootLayout` (Trn) | `() → Layout` via `layoutStore.load`, then `afterEdit`; re-run on every `onAuthChange` | `planner.html:bootLayout` | built |
 
 ## Composition rules → where enforced
 
 | Rule (ARCHITECTURE §6) | Enforced at | Tested at |
 | --- | --- | --- |
-| bounds invariant (hard) | `index.html:withinBounds`, called from `index.html:placementValid` | manual, see review |
-| no-overlap invariant (hard) | `index.html:hasCollision` / `index.html:overlaps`, called from `index.html:placementValid` | manual, see review |
-| `deserialize ∘ serialize = id` | `index.html:deserialize` (re-validates via bounds/collision on load) | manual, see review |
-| power outlet formula (`OUTLETS_PER_STRIP=4`, `CIRCUIT_WATT_CAP=1800`) | `index.html:computePower` | manual, see review |
-| spacing/clearance invariant (soft) | `index.html:computeSpacing` | manual, see review |
-| shopping-list total = Σ subtotal | `index.html:computeShoppingList` | manual, see review |
+| bounds invariant (hard) | `planner.html:withinBounds`, called from `planner.html:placementValid` | manual, see review |
+| no-overlap invariant (hard) | `planner.html:hasCollision` / `planner.html:overlaps`, called from `planner.html:placementValid` | manual, see review |
+| `deserialize ∘ serialize = id` | `planner.html:deserialize` (re-validates via bounds/collision on load) | manual, see review |
+| power outlet formula (`OUTLETS_PER_STRIP=4`, `CIRCUIT_WATT_CAP=1800`) | `planner.html:computePower` | manual, see review |
+| spacing/clearance invariant (soft) | `planner.html:computeSpacing` | manual, see review |
+| shopping-list total = Σ subtotal | `planner.html:computeShoppingList` | manual, see review |
 
 ## Notes / divergences
 
@@ -139,3 +143,37 @@
   returns empty), signed-in save/reload/restore round-trip, the non-blocking
   save-failure warning (verified by intercepting `window.fetch`), and that
   the signed-out `localStorage` path is untouched by any signed-in save.
+- **Reskin + planner split (`redesign-threejs-planner-split`)**: the planner
+  (markup, state machine, `layoutStore`, `saveLayoutForUser`/
+  `loadLayoutForUser`) moved from `index.html`'s `#planner`/`#summary`
+  sections into a new `planner.html`, alongside the `#export-modal` its
+  export button opens. `index.html`'s marketing shell was reskinned onto
+  Three.js (hero WebGL scene) + Lenis (smooth scroll) + GSAP/ScrollTrigger
+  (pin/scrub/reveal timelines, replacing the prior rAF/IntersectionObserver
+  code), all pinned-version CDN + `<script type="importmap">`, no bundler.
+  `assets/js/site-auth.js` (a native ES module) is the one piece of code
+  shared by both pages — `signUp`/`signIn`/`signOut`/`getCurrentUser`/
+  `onAuthChange`/`renderAuthNav`/`getSupabaseClient`, moved out of
+  `index.html`'s inline script. **Deviation from the initial design**:
+  `planner.html`'s `saveLayoutForUser`/`loadLayoutForUser` were first
+  implemented against a second, independently-instantiated Supabase client
+  (mirroring the pre-split code); live testing surfaced the Supabase SDK's
+  "Multiple GoTrueClient instances" warning (two clients racing over the same
+  `localStorage` auth-token key), so `planner.html` now reuses `site-auth.js`'s
+  one client via `getSupabaseClient()` instead. Verified live: `index.html`'s
+  auth wiring (a real failed sign-in against production Supabase shows
+  "Invalid login credentials"), `planner.html` standalone (catalog render,
+  click-to-place, live metrics/shopping-list, `localStorage` round-trip across
+  reload, export-modal blueprint summary), the fixed nav's `position: fixed`
+  staying correctly pinned to the viewport through the hero's `ScrollTrigger`
+  pin (see next note), and the accordion.
+- **Lenis/GSAP integration bug (found live while verifying):** `Lenis`
+  defaults to running its own `requestAnimationFrame` loop. Ticking it a
+  second time from `gsap.ticker` (the documented integration pattern) without
+  disabling that default — i.e. omitting `{ autoRaf: false }` — double-drives
+  scroll updates per frame, which desynced `ScrollTrigger`'s pinned hero from
+  the rest of the page (visually, the fixed nav appeared to scroll away with
+  the page instead of staying put, confirmed via `getBoundingClientRect`
+  showing the correct `{top:0}` while the compositor painted it elsewhere).
+  Fixed by passing `{ autoRaf: false }` to `new Lenis(...)` in
+  `assets/js/marketing-scene.js:initLenis`.

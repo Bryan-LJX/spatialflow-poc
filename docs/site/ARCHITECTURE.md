@@ -5,15 +5,20 @@
 
 ## 1. Overview
 
-The entire SpatialFlow PoC: a single `index.html` file (Tailwind CSS + Lucide
-icons via CDN `<script>`/`<link>` tags, vanilla JS, no build step, no backend)
-that markets "small-space productivity pods and custom micro-studio layouts"
-and demonstrates the concept with a client-side interactive planner — a
-feet-scaled room floor plan onto which the visitor places modular furniture,
-with real-time utilization/power/clearance calculations, an itemized
-shopping-list-and-cost summary, and a blueprint export. There is only one
-component because there is only one deployable artifact and no service
-boundary to split on.
+The entire SpatialFlow PoC: `index.html` (a dark, cinematic, scroll-driven
+marketing shell — Tailwind CSS + Lucide icons via CDN, plus Three.js/Lenis/
+GSAP for the hero/scroll motion, no build step) that markets "small-space
+productivity pods and custom micro-studio layouts", and `planner.html` (the
+client-side interactive planner it links to) — a feet-scaled room floor plan
+onto which the visitor places modular furniture, with real-time
+utilization/power/clearance calculations, an itemized shopping-list-and-cost
+summary, and a blueprint export. `redesign-threejs-planner-split` moved the
+planner from an embedded section into this second document; `assets/js/
+site-auth.js` (a native ES module, imported by both pages) is the one shared
+piece of code between them (§10). Still one component: both pages are static
+files served from the same Vercel origin, both reach the same Supabase
+backend, and there is no service boundary to split the model on — see §4.5
+coherence notes for why two documents don't mean two `Loc`s.
 
 ## 2. Why
 
@@ -146,11 +151,12 @@ graph LR
 | `downloadBlueprint` | `Blueprint → JSON file` | planned |
 
 **Loc** — three: the **browser runtime** (in-memory `Layout`, DOM, event
-handlers, Tailwind/Lucide CDN assets fetched once at load), **`localStorage`**
-(persisted `StoredLayoutJSON`), and the **OS downloads folder** (exported
-`.json` blueprint file). Plus two more added by `add-user-auth-persistence`
-(§11): a **Supabase-hosted Auth/Postgres service** and a **Vercel-hosted
-static origin**.
+handlers, Tailwind/Lucide/Three.js/GSAP/Lenis CDN assets fetched once at
+load — `index.html` and `planner.html` are two documents in this one `Loc`,
+not two, per §1/§10), **`localStorage`** (persisted `StoredLayoutJSON`), and
+the **OS downloads folder** (exported `.json` blueprint file). Plus two more
+added by `add-user-auth-persistence` (§11): a **Supabase-hosted Auth/Postgres
+service** and a **Vercel-hosted static origin**.
 
 **Trm** — `persist : Layout(runtime) → StoredLayoutJSON(localStorage)`,
 `restore : StoredLayoutJSON(localStorage) → Layout(runtime)`, and
@@ -188,46 +194,59 @@ None — this is the only component in the system.
 
 ## 10. Presentation layer (ambient, not modeled objects)
 
-Added by the `redesign-jesko-aesthetic` change: a cinematic, scroll-driven
-marketing shell (dark portal hero with a scroll zoom-through, a per-section
-palette journey, oversized display type, a split headline, an accordion, a
-spec table, and a near-black finale) wrapped around the **unchanged** planner.
-This is deliberately **not** part of the category: scene/scroll/reveal/
-accordion state is ephemeral DOM/CSS state — never serialized, never read by
-any `compute*`, never affecting an invariant. It is ambient same-`Loc` `Trn`
-(browser runtime → browser runtime DOM), not new `Dat`.
+Added by `redesign-jesko-aesthetic`, rewired onto a real WebGL/GSAP stack and
+split across two documents by `redesign-threejs-planner-split`: a cinematic,
+scroll-driven marketing shell (dark portal hero with a scroll zoom-through, a
+per-section palette journey, oversized display type, a split headline, an
+accordion, a spec table, and a near-black finale) on `index.html`, linking to
+the planner on its own page. This is deliberately **not** part of the
+category: scene/scroll/reveal/accordion state is ephemeral DOM/CSS/WebGL
+state — never serialized, never read by any `compute*`, never affecting an
+invariant. It is ambient same-`Loc` `Trn` (browser runtime → browser runtime
+DOM/canvas), not new `Dat`.
 
-- **`initScrollReveal`** (`index.html:initScrollReveal`) — reveals
-  `[data-reveal]` marketing nodes via `IntersectionObserver` (toggling
-  `.is-revealed`); `prefers-reduced-motion` reveals all immediately. **Note:**
-  a CSS `animation-timeline: view()` path was tried and removed — elements in
-  the final screenful never complete their `entry` range before the page's
-  scroll limit, leaving the finale/summary permanently hidden. IO fires on a
-  visibility threshold, so reveals complete everywhere.
-- **`initHeroZoom`** (`index.html:initHeroZoom`) — a rAF-throttled scroll
-  handler that scales + fades the hero portal (the jesko "zoom through the
-  window" effect). **Note:** CSS `animation-timeline: scroll()` proved inert
-  in the target engine, so this is driven by JS over a legible `scale(1)`
-  baseline; it is pure progressive enhancement and no-ops under
-  `prefers-reduced-motion`. (Both CSS scroll-driven timelines — `scroll()` and
-  `view()` — proved unreliable here; JS drives the motion instead.)
+- **`initScrollReveal`** (`assets/js/marketing-scene.js:initScrollReveal`) —
+  reveals `[data-reveal]` marketing nodes via a one-shot `ScrollTrigger` per
+  node (replacing the prior `IntersectionObserver`, same `.is-revealed`
+  contract); `prefers-reduced-motion` reveals all immediately, same as before.
+- **`initHeroScrub` / `initHeroScene`**
+  (`assets/js/marketing-scene.js:initHeroScrub`,
+  `assets/js/marketing-scene.js:initHeroScene`) — replace the prior rAF-driven
+  `initHeroZoom`. `initHeroScrub` pins the hero and scrubs the portal's
+  scale/opacity via GSAP `ScrollTrigger` (`pin: true`, `scrub: true`) — the
+  direct replacement for the old CSS-approximated zoom, and also the
+  WebGL-unavailable fallback (same visual effect, no 3D). `initHeroScene`
+  feature-detects WebGL and, when available, layers a Three.js scene (a small
+  cluster of brand-colored blocks) into the portal, dollying the camera and
+  rotating the group as `initHeroScrub`'s progress advances — the real WebGL
+  depth jeskojets.com's transition uses, instead of a flat scale/fade. Paused
+  via `IntersectionObserver` once the hero scrolls out of view (no render
+  loop for an off-screen canvas). Both no-op under `prefers-reduced-motion`
+  beyond one static WebGL frame.
+- **`initLenis`** (`assets/js/marketing-scene.js:initLenis`) — smooth
+  scrolling via Lenis, ticked from `gsap.ticker` with `autoRaf: false` (Lenis
+  must not run its own rAF loop alongside GSAP's — see Notes/divergences) and
+  synced to `ScrollTrigger.update()` on every Lenis scroll event. Skipped
+  entirely under `prefers-reduced-motion` — native scroll instead.
 - **`initAccordion`** (`index.html:initAccordion`) — toggles `.is-open` on
-  `.acc-item` advantage rows.
+  `.acc-item` advantage rows. Unchanged, plain vanilla JS — no dependency on
+  the WebGL/GSAP/Lenis stack.
 - **`initNavContrast`** (`index.html:initNavContrast`) — a scroll-spy that
   toggles `#site-nav.nav-dark` (dark nav text) when a `data-nav="light"`
   section is under the fixed nav, defaulting to white text over dark sections.
-  Replaced a `mix-blend-mode: difference` nav that was illegible over the
-  light sections. Colour-only, no motion.
+  Unchanged, plain vanilla JS. (`planner.html` doesn't need this — its own nav
+  is permanently light-styled, since the whole page is light-toned.)
 
-**Planner-fence invariant.** None of these ever run inside `#planner`'s
-dynamically re-rendered subtree (`#room-presets`, `#catalog-list`, `#board`,
-the metrics `<aside>`). Enforced structurally: `[data-reveal]` is never
-authored onto planner-internal elements (only onto the planner's *section
-heading*, which is marketing framing), and the reveal/scene functions read
-scroll/intersection signals and write `class`/`style` only — they never touch
-`state.layout`. The planner is reframed as a bright "studio workbench" panel
-(a deliberate light beat in the palette journey); only its section
-container/heading changed, its internal markup and classes are unchanged.
+**Shared auth module.** `assets/js/site-auth.js` (a native ES module,
+imported via `<script type="module">` by both `index.html` and
+`planner.html`) is the one piece of code both documents share — see §11 for
+its exported `Trm`s.
+
+**Planner-fence invariant — now structural, not just enforced.** Before the
+split, none of the functions above ever ran inside `#planner`'s dynamically
+re-rendered subtree; after the split, `index.html` contains no planner markup
+or state-machine code at all, so the invariant can't be violated by
+construction rather than by convention.
 
 **Palette journey.** Full-bleed sections each own their background and text
 color, grounded in the existing `wood`/`stone` tokens plus a new `espresso`
@@ -263,13 +282,19 @@ not ambient presentation. See `openspec/changes/add-user-auth-persistence/`
 
 **New Trn / Trm:**
 
-| Morphism | Signature | Kind | Partiality |
-| --- | --- | --- | --- |
-| `signUp` | `(email, password) → User` | `Trm` (browser → Supabase Auth) | Partial — fails on duplicate email or weak password |
-| `signIn` | `(email, password) → User` | `Trm` (browser → Supabase Auth) | Partial — fails on bad credentials |
-| `signOut` | `User → ()` | `Trm` (browser → Supabase Auth) | Total |
-| `saveLayoutForUser` | `(User, Layout) → StoredLayoutRow` | `Trm` (browser → Supabase Postgres), via `serialize` | Partial — fails if unreachable; never for a user's own row under RLS |
-| `loadLayoutForUser` | `User → Layout` | `Trm` (Supabase Postgres → browser), via `deserialize` | Partial — falls back to `defaultLayout()` when no row exists |
+| Morphism | Signature | Kind | Partiality | Realised at |
+| --- | --- | --- | --- | --- |
+| `signUp` | `(email, password) → User` | `Trm` (browser → Supabase Auth) | Partial — fails on duplicate email or weak password | `assets/js/site-auth.js:signUp` |
+| `signIn` | `(email, password) → User` | `Trm` (browser → Supabase Auth) | Partial — fails on bad credentials | `assets/js/site-auth.js:signIn` |
+| `signOut` | `User → ()` | `Trm` (browser → Supabase Auth) | Total | `assets/js/site-auth.js:signOut` |
+| `saveLayoutForUser` | `(User, Layout) → StoredLayoutRow` | `Trm` (browser → Supabase Postgres), via `serialize` | Partial — fails if unreachable; never for a user's own row under RLS | `planner.html:saveLayoutForUser` |
+| `loadLayoutForUser` | `User → Layout` | `Trm` (Supabase Postgres → browser), via `deserialize` | Partial — falls back to `defaultLayout()` when no row exists | `planner.html:loadLayoutForUser` |
+
+`redesign-threejs-planner-split` moved `signUp`/`signIn`/`signOut` (identity)
+into the shared `assets/js/site-auth.js` module and kept
+`saveLayoutForUser`/`loadLayoutForUser` (the `layouts`-table `Trm`) in
+`planner.html` alongside `layoutStore` — a relocation only, no signature or
+behavior change; all five were previously realised in `index.html`.
 
 **New Loc:** a **Supabase-hosted Auth/Postgres service** (holds `User` and
 `StoredLayoutRow`; reached only via the JS SDK + anon key, access controlled
@@ -285,7 +310,21 @@ moved — they still only ever trigger `afterEdit`, which now calls
 directly. `layoutStore` picks `persist`/`restore` (signed-out) or
 `saveLayoutForUser`/`loadLayoutForUser` (signed-in) based on `currentUser`.
 Signed-out behavior (`localStorage`, key `spatialflow.layout.v2`) is
-byte-for-byte unchanged — verified live.
+byte-for-byte unchanged — verified live. Since `redesign-threejs-planner-split`,
+`currentUser` is read via `assets/js/site-auth.js:getCurrentUser` instead of a
+page-local variable; no other change to the port.
+
+**Correctness note (`redesign-threejs-planner-split`, found live while
+verifying):** `saveLayoutForUser`/`loadLayoutForUser` were first implemented
+against a second Supabase client instantiated locally in `planner.html`
+(mirroring the pre-split `index.html` code exactly). Every `createClient()`
+call spins up its own `GoTrueClient` managing the shared
+`sb-<project>-auth-token` `localStorage` key — even for a client that never
+touches `.auth` — so two independent clients on one page raced over that key
+and triggered the Supabase SDK's own "Multiple GoTrueClient instances"
+warning. Fixed by adding `assets/js/site-auth.js:getSupabaseClient` and having
+`planner.html` reuse that one client for its `.from("layouts")` calls instead
+of creating a second one.
 
 **Coherence notes:**
 
