@@ -4,7 +4,7 @@
 > website, based only on the work logs from every session and the record of
 > every feature request ("change") made in this project.
 
-## What this covers
+## 1. Scope and method
 
 Between September 23 and September 25, the AI built this site across eight
 work sessions. Six of those sessions each delivered one finished feature or
@@ -19,7 +19,7 @@ redesign:
 
 The other two sessions were setup and documentation work, not new features.
 
-## 1. What went well
+## 2. Successes
 
 Several pieces of work were done correctly the first time, with nothing
 needing to be fixed afterward:
@@ -38,7 +38,7 @@ needing to be fixed afterward:
   keeping a credits list) was set up once and then followed correctly every
   time afterward, without needing to be reminded.
 
-## 2. Times the AI got something wrong before being corrected
+## 3. Hallucinations and incorrect technical assumptions
 
 A few times, the AI built something based on an assumption that turned out
 to be incorrect once actually tested in a real browser:
@@ -69,7 +69,7 @@ to be incorrect once actually tested in a real browser:
   documentation — had to be thrown away and rebuilt from scratch in the
   correct direction.
 
-## 3. Times the AI needed the user to step in
+## 4. Manual interventions required during code generation
 
 The AI could not complete everything alone. It needed the user to:
 
@@ -95,7 +95,7 @@ The AI could not complete everything alone. It needed the user to:
 - Manually delete a section from the project's README file rather than
   asking the AI to do it.
 
-## 4. Mistakes the user found that the AI's own checks missed
+## 5. Mistakes the user caught post-implementation that Claude did not catch first
 
 This is the most important pattern in the report. Several times, the AI
 tested its own work, declared it finished and working, and then the user
@@ -118,7 +118,7 @@ leaks) — it just wasn't good at judging *how something looked or felt* to a
 real person, and once it declared something "done," that was usually before
 anyone had actually looked at it critically.
 
-## 5. Surprises during building that nobody predicted upfront
+## 6. Edge cases where actual implementation differed from baseline predictions
 
 A few technical problems only showed up once things were actually running
 live, not while anything was being planned or written:
@@ -146,7 +146,7 @@ live, not while anything was being planned or written:
   white; a replacement photo brought the same problem back in a fainter
   form (see also section 2).
 
-## 6. Overall summary
+## 7. Summary
 
 | Measure | Result |
 | --- | --- |
