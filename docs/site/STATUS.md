@@ -5,11 +5,18 @@
 
 ## Headline
 
-✅ built — `index.html` (Tailwind + Lucide CDN, Space Grotesk display via
-Google Fonts, vanilla JS) per `docs/site/ARCHITECTURE.md`: a dark, cinematic,
-scroll-driven marketing shell (jeskojets.com-inspired — portal hero with
-scroll zoom-through, per-section palette journey, split headline, accordion,
-spec table, dark finale, floating pill CTA) wrapping an **unchanged**
+🔄 in flight — `add-user-auth-persistence`: email/password auth and per-user
+Supabase-backed layout storage are implemented and verified locally
+(registration, login, logout, session restore, save/restore round-trip, RLS
+cross-account denial, non-blocking save-failure warning, unchanged
+signed-out local fallback); production deployment to Vercel is the remaining
+step.
+
+✅ built (baseline) — `index.html` (Tailwind + Lucide CDN, Space Grotesk
+display via Google Fonts, vanilla JS) per `docs/site/ARCHITECTURE.md`: a
+dark, cinematic, scroll-driven marketing shell (jeskojets.com-inspired —
+portal hero with scroll zoom-through, per-section palette journey, split
+headline, accordion, spec table, dark finale, floating pill CTA) wrapping a
 room-preset-driven layout planner (live utilization/power/spacing metrics,
 itemized shopping list, blueprint export). The cinematic reskin
 (`redesign-jesko-aesthetic`) replaced the earlier warm-wood look; the
@@ -30,6 +37,9 @@ change's proposal).
 | `computeSpacing` | ✅ built | soft warning confirmed non-blocking |
 | `computeShoppingList` / `buildBlueprint` / `downloadBlueprint` (Trm) | ✅ built | modal contents verified to match canvas; download click ran with no console errors; re-verified unchanged after the cinematic reskin |
 | `initScrollReveal` / `initHeroZoom` / `initAccordion` (presentation, not `Dat`) | ✅ built | cinematic scroll shell; reveals via `view()` (verified), hero zoom JS-driven (CSS `scroll()` inert), all outside the planner subtree |
+| `User` / `StoredLayoutRow` | ✅ built | Supabase Auth + Postgres (`layouts` table, RLS by `user_id = auth.uid()`) |
+| `signUp` / `signIn` / `signOut` (Trm) | ✅ built | verified live: successful + duplicate-email registration, successful + wrong-password login, logout, session restore across reload |
+| `saveLayoutForUser` / `loadLayoutForUser` (Trm) / `layoutStore` (port) | ✅ built | verified live: save/reload round-trip, first-time-user default, non-blocking save-failure warning (simulated via `fetch` interception), RLS cross-account denial (unfiltered + targeted queries both return no other account's row), signed-out `localStorage` path unaffected |
 
 ## Needs work
 
@@ -41,16 +51,20 @@ change's proposal).
 3. Hero "zoom-through" is JS-driven because CSS `animation-timeline: scroll()`
    is inert in the target engine — works, but is not the native
    scroll-timeline implementation; revisit if that engine support lands.
+4. `add-user-auth-persistence` is verified locally only — production
+   deployment to Vercel (task group 5) and re-verification against the live
+   URL are still pending.
 
 ## Coherence
 
-§4.5 checklists run in `reviews/review-redesign-tailwind-planner.md` (planner)
-and `reviews/review-redesign-jesko-aesthetic.md` (cinematic reskin) — all
+§4.5 checklists run in `reviews/review-redesign-tailwind-planner.md` (planner),
+`reviews/review-redesign-jesko-aesthetic.md` (cinematic reskin), and
+`reviews/review-add-user-auth-persistence.md` (auth + persistence) — all
 checkable laws pass; see those files for the one-line rationale per law.
 
 ## Where to dig
 
 - Model: [ARCHITECTURE.md](ARCHITECTURE.md) · Code map: [IMPLEMENTATION.md](IMPLEMENTATION.md)
-- In flight: none — `redesign-jesko-aesthetic` archived to `openspec/changes/archive/2026-09-25-redesign-jesko-aesthetic/`
-- Reviews: [reviews/review-redesign-tailwind-planner.md](reviews/review-redesign-tailwind-planner.md), [reviews/review-redesign-jesko-aesthetic.md](reviews/review-redesign-jesko-aesthetic.md) · Notes: `general/`
+- In flight: `add-user-auth-persistence` — `openspec/changes/add-user-auth-persistence/`
+- Reviews: [reviews/review-redesign-tailwind-planner.md](reviews/review-redesign-tailwind-planner.md), [reviews/review-redesign-jesko-aesthetic.md](reviews/review-redesign-jesko-aesthetic.md), [reviews/review-add-user-auth-persistence.md](reviews/review-add-user-auth-persistence.md) · Notes: `general/`
 - Image credits: `images/CREDITS.md`

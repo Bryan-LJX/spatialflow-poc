@@ -4,23 +4,21 @@
 
 | Component | State | Headline gap | In flight | Detail |
 | --- | --- | --- | --- | --- |
-| Site | ✅ built | no automated tests, manual verification only | none | [site/STATUS.md](site/STATUS.md) |
+| Site | 🔄 in flight | no automated tests; auth/persistence verified locally, production deploy pending | `add-user-auth-persistence` | [site/STATUS.md](site/STATUS.md) |
 
 ## Cross-cutting
 
-`index.html` is a single-file micro-office layout planner PoC. Its marketing
-shell was reskinned to a dark, cinematic, scroll-driven aesthetic modeled on
-jeskojets.com (`redesign-jesko-aesthetic`): a portal hero with a scroll
-zoom-through, a per-section palette journey, oversized Space Grotesk display
-type, a split headline, an accordion, a spec table, a dark finale, and a
-floating pill CTA. The interactive planner (room presets, drag/drop placement,
+`index.html` is a single-file micro-office layout planner PoC with a dark,
+cinematic, scroll-driven marketing shell (`redesign-jesko-aesthetic`,
+archived) wrapping a room-preset-driven layout planner (drag/drop placement,
 hard bounds/overlap invariants, soft spacing, live metrics, shopping list,
-blueprint export, `localStorage`) is **unchanged** — it sits inside the shell
-as a bright "studio workbench" panel and was re-verified with no regressions.
-An earlier scroll-animation + furniture-image change was discarded (wrong
-direction) before this reskin. A second review pass before archiving found
-and fixed two more defects: a workbench grid sizing bug that let the metrics
-sidebar bleed past the panel's white border, and a showcase image that
-visually collided with the split headline. `redesign-jesko-aesthetic` is now
-archived. No automated test suite exists anywhere in the repo — acceptable
-for this PoC's scope, tracked as a named gap.
+blueprint export). `add-user-auth-persistence` (in flight) adds email/password
+registration and login via Supabase Auth, and replaces the anonymous
+single-device `localStorage` layout with per-user, RLS-protected storage in
+Supabase Postgres for signed-in visitors — signed-out visitors keep the
+original local, single-device planner unchanged. Implemented and verified
+locally (registration, login, logout, session restore, save/reload
+round-trip, RLS cross-account denial, non-blocking save-failure handling);
+deploying to Vercel production is the remaining step. No automated test suite
+exists anywhere in the repo — acceptable for this PoC's scope, tracked as a
+named gap.

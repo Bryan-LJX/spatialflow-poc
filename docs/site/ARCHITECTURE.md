@@ -148,13 +148,17 @@ graph LR
 **Loc** — three: the **browser runtime** (in-memory `Layout`, DOM, event
 handlers, Tailwind/Lucide CDN assets fetched once at load), **`localStorage`**
 (persisted `StoredLayoutJSON`), and the **OS downloads folder** (exported
-`.json` blueprint file). No server — this PoC has no backend by requirement.
+`.json` blueprint file). Plus two more added by `add-user-auth-persistence`
+(§11): a **Supabase-hosted Auth/Postgres service** and a **Vercel-hosted
+static origin**.
 
 **Trm** — `persist : Layout(runtime) → StoredLayoutJSON(localStorage)`,
 `restore : StoredLayoutJSON(localStorage) → Layout(runtime)`, and
-`downloadBlueprint : Blueprint(runtime) → JSON file(downloads)`. These are the
-only three real cross-`Loc` transmissions; everything else (rendering,
-editing, computing metrics) is same-`Loc` `Trn`.
+`downloadBlueprint : Blueprint(runtime) → JSON file(downloads)`. These were
+the only three real cross-`Loc` transmissions until `add-user-auth-persistence`
+(§11) added `signUp`/`signIn`/`signOut`/`saveLayoutForUser`/
+`loadLayoutForUser`; everything else (rendering, editing, computing metrics)
+is same-`Loc` `Trn`.
 
 **Placements (§4.2)** — none. Nothing here is placed at more than one `Loc`
 simultaneously; the runtime, storage and download copies are distinct objects
@@ -243,3 +247,63 @@ shape change, no effect on any `compute*` or invariant.
   and `images/furniture/`) are all fetched once by the existing browser
   runtime and carry no `Layout` data, exactly like the Tailwind/Lucide CDN
   assets (§9).
+
+## 11. User & persistence layer (`add-user-auth-persistence`)
+
+Unlike §10, this is a real model change — new `Dat`, `Trn`, `Loc`, and `Trm`,
+not ambient presentation. See `openspec/changes/add-user-auth-persistence/`
+(design.md) for the full rationale.
+
+**New Dat:**
+
+| Object | Form / shape | Loc |
+| --- | --- | --- |
+| `User` | Supabase Auth user record `{ id, email }` | Supabase Auth service |
+| `StoredLayoutRow` | `{ user_id: uuid, layout: jsonb (= StoredLayoutJSON), updated_at: timestamptz }` | Supabase Postgres (`layouts` table) |
+
+**New Trn / Trm:**
+
+| Morphism | Signature | Kind | Partiality |
+| --- | --- | --- | --- |
+| `signUp` | `(email, password) → User` | `Trm` (browser → Supabase Auth) | Partial — fails on duplicate email or weak password |
+| `signIn` | `(email, password) → User` | `Trm` (browser → Supabase Auth) | Partial — fails on bad credentials |
+| `signOut` | `User → ()` | `Trm` (browser → Supabase Auth) | Total |
+| `saveLayoutForUser` | `(User, Layout) → StoredLayoutRow` | `Trm` (browser → Supabase Postgres), via `serialize` | Partial — fails if unreachable; never for a user's own row under RLS |
+| `loadLayoutForUser` | `User → Layout` | `Trm` (Supabase Postgres → browser), via `deserialize` | Partial — falls back to `defaultLayout()` when no row exists |
+
+**New Loc:** a **Supabase-hosted Auth/Postgres service** (holds `User` and
+`StoredLayoutRow`; reached only via the JS SDK + anon key, access controlled
+by Row Level Security — `user_id = auth.uid()` on `select`/`insert`/`update`,
+verified live by attempting a cross-account read and confirming it returns no
+rows even with an unfiltered query), and a **Vercel-hosted static origin**
+(production hosting for `index.html`/`images/`; carries no state of its own).
+
+**`layoutStore` port (design.md Decision 4):** `addItem`/`moveItem`/
+`rotateItem`/`removeItem`/`selectRoom`/`renderGrid` never learned that storage
+moved — they still only ever trigger `afterEdit`, which now calls
+`layoutStore.save`/`layoutStore.load` instead of `persist`/`restore`
+directly. `layoutStore` picks `persist`/`restore` (signed-out) or
+`saveLayoutForUser`/`loadLayoutForUser` (signed-in) based on `currentUser`.
+Signed-out behavior (`localStorage`, key `spatialflow.layout.v2`) is
+byte-for-byte unchanged — verified live.
+
+**Coherence notes:**
+
+- **Law 1 (placement honesty):** the two new `Loc`s are named explicitly and
+  are the only new locations — no claim of caching, edge storage, or a
+  custom backend server (there is none; see design.md Decision 5).
+- **Law 2 (transmission well-typing):** `saveLayoutForUser`/
+  `loadLayoutForUser` carry `StoredLayoutRow`/`StoredLayoutJSON` only, never a
+  live in-memory `Layout` reference — same discipline as `persist`/`restore`.
+- **Law 5 (composition soundness):** `loadLayoutForUser ∘ saveLayoutForUser =
+  id` on any `Layout` satisfying the bounds/overlap invariants, mirroring
+  `deserialize ∘ serialize = id` — `deserialize` still re-validates on the way
+  back in regardless of which `Trm` produced the JSON.
+- **Correctness note (found during implementation, fixed before verifying):**
+  `currentUser` must be set synchronously in the `signUp`/`signIn`/`signOut`
+  promise handlers themselves, not only by the async `onAuthStateChange`
+  listener — otherwise an edit made in the brief window between a successful
+  sign-in and that event firing could race and land in `localStorage` instead
+  of Supabase (or vice versa on sign-out), silently violating the
+  `layoutStore` port's isolation guarantee. `onAuthStateChange` is now used
+  only for the one-time `INITIAL_SESSION` restore on page load.

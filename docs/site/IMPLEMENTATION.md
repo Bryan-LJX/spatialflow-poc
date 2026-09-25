@@ -19,6 +19,8 @@
 | `SpacingWarnings` | `{ pairs, flaggedIds }` | `index.html:computeSpacing` | built |
 | `ShoppingList` | `{ rows, total }` | `index.html:computeShoppingList` | built |
 | `Blueprint` | `{ room, items, utilization, power, spacing, shoppingList, exportedAt }` | `index.html:buildBlueprint` | built |
+| `User` | Supabase Auth user record `{ id, email }` | Supabase Auth service (no local realisation — read from `session.user`) | built |
+| `StoredLayoutRow` | `{ user_id, layout: jsonb, updated_at }` | Supabase Postgres `layouts` table (SQL migration, not `index.html`) | built |
 
 ## Morphisms (Trn / relations) → code
 
@@ -45,6 +47,14 @@
 | `initHeroZoom` (presentation) | `scroll signal → DOM(hero portal transform)` | `index.html:initHeroZoom` | built |
 | `initAccordion` (presentation) | `click → DOM(.acc-item.is-open)` | `index.html:initAccordion` | built |
 | `initNavContrast` (presentation) | `scroll signal → DOM(#site-nav.nav-dark)` | `index.html:initNavContrast` | built |
+| `signUp` (Trm) | `(email, password) → User` | `index.html:signUp` | built |
+| `signIn` (Trm) | `(email, password) → User` | `index.html:signIn` | built |
+| `signOut` (Trm) | `User → ()` | `index.html:signOut` | built |
+| `saveLayoutForUser` (Trm) | `(User, Layout) → StoredLayoutRow` | `index.html:saveLayoutForUser` | built |
+| `loadLayoutForUser` (Trm) | `User → Layout` | `index.html:loadLayoutForUser` | built |
+| `layoutStore` (port) | `save: Layout → ()`, `load: () → Promise<Layout>` — dispatches to `persist`/`restore` or `saveLayoutForUser`/`loadLayoutForUser` by `currentUser` | `index.html:layoutStore` | built |
+| `updateAuthUI` (presentation) | `User? → DOM(#auth-widget)` | `index.html:updateAuthUI` | built |
+| `bootLayout` (Trn) | `() → Layout` via `layoutStore.load`, then `afterEdit` | `index.html:bootLayout` | built |
 
 ## Composition rules → where enforced
 
@@ -113,3 +123,19 @@
   `images/showcase-chair.jpg` (public domain), sourced from Wikimedia Commons,
   credited in `images/CREDITS.md`; each `<img>` has an `onerror`/fallback so a
   missing file never breaks layout.
+- **User auth + persistence (`add-user-auth-persistence`)**: `signUp`/
+  `signIn`/`signOut`/`saveLayoutForUser`/`loadLayoutForUser` and the
+  `layoutStore` port added per ARCHITECTURE.md §11. **Deviation from the
+  initial design**: `currentUser` is set synchronously inside the
+  `signUp`/`signIn`/`signOut` promise handlers (`index.html`'s auth-form
+  submit handler and `btn-nav-signout` click handler), not solely by
+  `supabaseClient.auth.onAuthStateChange` as first sketched — live testing
+  found that relying only on the async event left a real race window where an
+  edit made right after signing in could be saved to the wrong store before
+  the event fired. `onAuthStateChange` is now used only for the one-time
+  `INITIAL_SESSION` restore on page load. Verified live: RLS cross-account
+  denial (a second account's unfiltered `select` on `layouts` returns only
+  its own row, and an explicit query for the first account's `user_id`
+  returns empty), signed-in save/reload/restore round-trip, the non-blocking
+  save-failure warning (verified by intercepting `window.fetch`), and that
+  the signed-out `localStorage` path is untouched by any signed-in save.

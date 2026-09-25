@@ -46,6 +46,8 @@
   };
 </script>
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 
 <style>
   html { scroll-behavior: smooth; }
@@ -87,6 +89,7 @@
   .fade-in-up { animation: fade-in-up .18s ease-out; }
 
   #export-modal.is-open { display: flex; }
+  #auth-modal.is-open { display: flex; }
 
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -209,7 +212,16 @@
       <a href="#planner" class="hover:opacity-60 transition-opacity">Planner</a>
       <a href="#summary" class="hover:opacity-60 transition-opacity">Blueprint</a>
     </nav>
-    <div class="hidden sm:block text-xs uppercase tracking-[0.15em]">Design&nbsp;·&nbsp;In&nbsp;Browser</div>
+    <div id="auth-widget" class="flex items-center gap-3 text-[11px] sm:text-xs">
+      <div id="auth-signed-out" class="flex items-center gap-3 uppercase tracking-[0.15em] font-medium">
+        <button id="btn-nav-signin" type="button" class="hover:opacity-60 transition-opacity">Sign In</button>
+        <button id="btn-nav-signup" type="button" class="hover:opacity-60 transition-opacity">Sign Up</button>
+      </div>
+      <div id="auth-signed-in" class="hidden items-center gap-3">
+        <span id="auth-user-email" class="opacity-80 max-w-[120px] sm:max-w-[180px] truncate normal-case"></span>
+        <button id="btn-nav-signout" type="button" class="uppercase tracking-[0.15em] font-medium hover:opacity-60 transition-opacity">Sign Out</button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -572,6 +584,45 @@
   </div>
 </div>
 
+<div id="auth-modal" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
+  <div id="auth-modal-backdrop" class="absolute inset-0 bg-stone-900/50 backdrop-blur-sm"></div>
+  <div class="relative w-full max-w-sm rounded-2xl bg-white shadow-soft p-6 sm:p-8 fade-in-up">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h3 id="auth-modal-title" class="text-lg font-semibold text-stone-900">Sign in</h3>
+        <p class="text-sm text-stone-500">Save your layout to your account.</p>
+      </div>
+      <button id="btn-auth-modal-close" type="button" class="text-stone-400 hover:text-stone-600 transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <form id="auth-form" class="mt-6 space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-stone-600 mb-1" for="auth-email">Email</label>
+        <input id="auth-email" type="email" required autocomplete="email"
+          class="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-wood-400">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-stone-600 mb-1" for="auth-password">Password</label>
+        <input id="auth-password" type="password" required minlength="6" autocomplete="current-password"
+          class="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-wood-400">
+      </div>
+      <p id="auth-error" class="hidden text-sm text-red-600"></p>
+      <p id="auth-info" class="hidden text-sm text-wood-700"></p>
+      <button id="btn-auth-submit" type="submit"
+        class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-wood-600 text-white font-medium px-5 py-3 hover:bg-wood-700 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+        Sign In
+      </button>
+    </form>
+
+    <p class="mt-4 text-center text-sm text-stone-500">
+      <span id="auth-toggle-prompt">Don't have an account?</span>
+      <button id="btn-auth-toggle-mode" type="button" class="text-wood-700 font-medium hover:underline">Sign up</button>
+    </p>
+  </div>
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -886,6 +937,86 @@
     return deserialize(raw);
   }
 
+  /* =====================================================================
+   * Trm — Supabase Auth + Postgres. New Loc introduced by
+   * add-user-auth-persistence: a Supabase-hosted Auth/Postgres service,
+   * reached only via the JS SDK + anon key, access controlled by RLS.
+   * See docs/site/ARCHITECTURE.md (post-add-user-auth-persistence).
+   * ===================================================================*/
+
+  var supabaseClient = (window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY)
+    ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
+    : null;
+
+  var currentUser = null;
+
+  /** signUp : (email, password) -> User (Trm, partial: fails on duplicate/weak password) */
+  function signUp(email, password) {
+    if (!supabaseClient) return Promise.reject(new Error("Auth is not configured."));
+    return supabaseClient.auth.signUp({ email: email, password: password }).then(function (res) {
+      if (res.error) throw res.error;
+      return res.data.user;
+    });
+  }
+
+  /** signIn : (email, password) -> User (Trm, partial: fails on bad credentials) */
+  function signIn(email, password) {
+    if (!supabaseClient) return Promise.reject(new Error("Auth is not configured."));
+    return supabaseClient.auth.signInWithPassword({ email: email, password: password }).then(function (res) {
+      if (res.error) throw res.error;
+      return res.data.user;
+    });
+  }
+
+  /** signOut : User -> () (Trm, total) */
+  function signOut() {
+    if (!supabaseClient) return Promise.resolve();
+    return supabaseClient.auth.signOut();
+  }
+
+  /** saveLayoutForUser : (User, Layout) -> StoredLayoutRow (Trm, partial: fails if unreachable) */
+  function saveLayoutForUser(user, layout) {
+    if (!supabaseClient || !user) return Promise.reject(new Error("Not signed in."));
+    return supabaseClient.from("layouts").upsert({
+      user_id: user.id,
+      layout: JSON.parse(serialize(layout)),
+      updated_at: new Date().toISOString()
+    }).then(function (res) {
+      if (res.error) throw res.error;
+    });
+  }
+
+  /** loadLayoutForUser : User -> Layout (Trm, partial: falls back to default on no row) */
+  function loadLayoutForUser(user) {
+    if (!supabaseClient || !user) return Promise.resolve(defaultLayout());
+    return supabaseClient.from("layouts").select("layout").eq("user_id", user.id).maybeSingle()
+      .then(function (res) {
+        if (res.error) throw res.error;
+        if (!res.data || !res.data.layout) return defaultLayout();
+        return deserialize(JSON.stringify(res.data.layout));
+      });
+  }
+
+  /**
+   * layoutStore — port isolating storage effects (design.md Decision 4).
+   * addItem/moveItem/... and renderGrid never learn whether storage is
+   * localStorage or Supabase; they only ever call layoutStore.save/load.
+   */
+  var layoutStore = {
+    save: function (layout) {
+      if (currentUser) {
+        saveLayoutForUser(currentUser, layout).catch(function () {
+          showNotice("Couldn't save to your account — check your connection. Your change is still shown here.");
+        });
+      } else {
+        persist(layout);
+      }
+    },
+    load: function () {
+      return currentUser ? loadLayoutForUser(currentUser) : Promise.resolve(restore());
+    }
+  };
+
   /** downloadBlueprint : Blueprint(runtime) -> JSON file(downloads) */
   function downloadBlueprint(blueprint) {
     var blob = new Blob([JSON.stringify(blueprint, null, 2)], { type: "application/json" });
@@ -1146,7 +1277,7 @@
   }
 
   function afterEdit() {
-    persist(state.layout);
+    layoutStore.save(state.layout);
     var spacing = renderMetrics();
     renderRoomPresets();
     renderGrid(spacing);
@@ -1308,6 +1439,109 @@
   }
 
   /* =====================================================================
+   * Auth UI — sign-up/sign-in/sign-out. Lives in #site-nav, outside
+   * #planner's dynamic subtree (planner-fence invariant, ARCHITECTURE.md
+   * §10). Signing in/out only ever calls layoutStore/afterEdit, exactly
+   * like a room-preset switch — no new render path.
+   * ===================================================================*/
+
+  var authModalEl = document.getElementById("auth-modal");
+  var authFormEl = document.getElementById("auth-form");
+  var authEmailEl = document.getElementById("auth-email");
+  var authPasswordEl = document.getElementById("auth-password");
+  var authErrorEl = document.getElementById("auth-error");
+  var authInfoEl = document.getElementById("auth-info");
+  var authSubmitEl = document.getElementById("btn-auth-submit");
+  var authSignedOutEl = document.getElementById("auth-signed-out");
+  var authSignedInEl = document.getElementById("auth-signed-in");
+  var authUserEmailEl = document.getElementById("auth-user-email");
+  var authMode = "signin";
+
+  function updateAuthUI() {
+    if (currentUser) {
+      authSignedOutEl.classList.add("hidden");
+      authSignedInEl.classList.remove("hidden");
+      authSignedInEl.classList.add("flex");
+      authUserEmailEl.textContent = currentUser.email;
+    } else {
+      authSignedOutEl.classList.remove("hidden");
+      authSignedInEl.classList.add("hidden");
+      authSignedInEl.classList.remove("flex");
+    }
+  }
+
+  function renderAuthModalMode() {
+    var isSignUp = authMode === "signup";
+    document.getElementById("auth-modal-title").textContent = isSignUp ? "Sign up" : "Sign in";
+    authSubmitEl.textContent = isSignUp ? "Sign Up" : "Sign In";
+    document.getElementById("auth-toggle-prompt").textContent =
+      isSignUp ? "Already have an account?" : "Don't have an account?";
+    document.getElementById("btn-auth-toggle-mode").textContent = isSignUp ? "Sign in" : "Sign up";
+    authPasswordEl.setAttribute("autocomplete", isSignUp ? "new-password" : "current-password");
+  }
+
+  function openAuthModal(mode) {
+    authMode = mode;
+    renderAuthModalMode();
+    authErrorEl.classList.add("hidden");
+    authInfoEl.classList.add("hidden");
+    authFormEl.reset();
+    authModalEl.classList.remove("hidden");
+    authModalEl.classList.add("is-open");
+    authEmailEl.focus();
+  }
+
+  function closeAuthModal() {
+    authModalEl.classList.add("hidden");
+    authModalEl.classList.remove("is-open");
+  }
+
+  document.getElementById("btn-nav-signin").addEventListener("click", function () { openAuthModal("signin"); });
+  document.getElementById("btn-nav-signup").addEventListener("click", function () { openAuthModal("signup"); });
+  document.getElementById("btn-nav-signout").addEventListener("click", function () {
+    signOut().then(function () {
+      currentUser = null;
+      updateAuthUI();
+      bootLayout();
+    });
+  });
+  document.getElementById("btn-auth-modal-close").addEventListener("click", closeAuthModal);
+  document.getElementById("auth-modal-backdrop").addEventListener("click", closeAuthModal);
+  document.getElementById("btn-auth-toggle-mode").addEventListener("click", function () {
+    openAuthModal(authMode === "signup" ? "signin" : "signup");
+  });
+
+  authFormEl.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    authErrorEl.classList.add("hidden");
+    authInfoEl.classList.add("hidden");
+    authSubmitEl.setAttribute("disabled", "disabled");
+
+    var email = authEmailEl.value.trim();
+    var password = authPasswordEl.value;
+    var action = authMode === "signup" ? signUp(email, password) : signIn(email, password);
+
+    action.then(function (user) {
+      currentUser = user;
+      updateAuthUI();
+      bootLayout();
+      authSubmitEl.removeAttribute("disabled");
+      if (authMode === "signup") {
+        authInfoEl.textContent = "Account created. You're signed in.";
+        authInfoEl.classList.remove("hidden");
+        setTimeout(closeAuthModal, 900);
+      } else {
+        closeAuthModal();
+      }
+    }).catch(function (err) {
+      authSubmitEl.removeAttribute("disabled");
+      authErrorEl.textContent = (err && err.message) ||
+        (authMode === "signup" ? "Couldn't create that account." : "Incorrect email or password.");
+      authErrorEl.classList.remove("hidden");
+    });
+  });
+
+  /* =====================================================================
    * Presentation layer — cinematic scroll scenes (redesign-jesko-aesthetic)
    * Only reads scroll/intersection signals and toggles classes on
    * marketing-shell nodes; never reads or writes `state`/`Layout`, never
@@ -1426,9 +1660,33 @@
     resizeTimer = setTimeout(function () { renderGrid(computeSpacing(state.layout)); }, 100);
   });
 
-  state.layout = restore();
+  function bootLayout() {
+    layoutStore.load().then(function (layout) {
+      state.layout = layout;
+      afterEdit();
+    });
+  }
+
   renderCatalog();
-  afterEdit();
+
+  if (supabaseClient) {
+    /* Only drives the one-time initial session restore (task 2.5). Interactive
+     * sign-up/sign-in/sign-out set currentUser synchronously themselves
+     * (see auth-form submit handler and btn-nav-signout above) so a save
+     * immediately after signing in can never race an async auth event and
+     * land in the wrong store (design.md Decision 4 — layoutStore isolation
+     * depends on currentUser always being current at edit time). */
+    supabaseClient.auth.onAuthStateChange(function (event, session) {
+      if (event === "INITIAL_SESSION") {
+        currentUser = session ? session.user : null;
+        updateAuthUI();
+        bootLayout();
+      }
+    });
+  } else {
+    updateAuthUI();
+    bootLayout();
+  }
 
   initScrollReveal();
   initHeroZoom();
