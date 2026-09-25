@@ -5,29 +5,31 @@
 
 ## Headline
 
-🔄 in flight — `redesign-threejs-planner-split`: the marketing shell
+✅ built — `redesign-threejs-planner-split`: the marketing shell
 (`index.html`) is reskinned onto Three.js (WebGL hero scene) + Lenis (smooth
 scroll) + GSAP/ScrollTrigger (pin/scrub/reveal timelines), all free/MIT,
 CDN-only via `<script type="importmap">`, no bundler. The Micro-Office Layout
 Builder moved off `index.html` onto its own `planner.html`, linked from the
 marketing site's nav/CTA/finale; `assets/js/site-auth.js` (a native ES
-module) is the one piece of auth/session code shared by both pages. Verified
-locally: hero WebGL scene + pinned scroll-through, scroll reveals, accordion,
-nav contrast, auth modal wiring (a real failed sign-in against production
-Supabase), and `planner.html` standalone (catalog, placement, live metrics,
-`localStorage` round-trip, export-modal blueprint). Two bugs found and fixed
-live during verification — see IMPLEMENTATION.md's Notes/divergences (a
-Lenis/GSAP double-rAF desync, and a duplicate-Supabase-client warning).
-Remaining: closeout (drift check, archive) and production redeploy.
+module) is the one piece of auth/session code shared by both pages. Two bugs
+found and fixed live during verification — see IMPLEMENTATION.md's
+Notes/divergences (a Lenis/GSAP double-rAF desync, and a duplicate-Supabase-
+client warning). Deployed and re-verified in production.
+
+✅ built — `add-showcase-chair-spin`: a scroll-driven diagonal parallax glide
+on the `#showcase` chair image (`assets/js/marketing-scene.js:
+initShowcaseSpin`), reusing the GSAP/ScrollTrigger already loaded for the
+hero. Two earlier iterations (a full 360° rotation, then a small parallax
+rise) were tried and rejected on live user feedback before landing on this
+one — see IMPLEMENTATION.md's Notes/divergences. Deployed and verified in
+production.
 
 ✅ built — `add-user-auth-persistence`: email/password auth and per-user
 Supabase-backed layout storage, implemented and verified both locally and in
 production (registration, login, logout, session restore, save/restore
 round-trip, RLS cross-account denial, non-blocking save-failure warning,
 unchanged signed-out local fallback). Deployed at
-**https://spatialflow-poc.vercel.app/** (that deployment predates
-`redesign-threejs-planner-split`, which has not yet been redeployed — see
-"Needs work").
+**https://spatialflow-poc.vercel.app/**.
 
 ✅ built (baseline) — a room-preset-driven layout planner (live
 utilization/power/spacing metrics, itemized shopping list, blueprint export)
@@ -65,10 +67,8 @@ change's proposal).
    markup (only the auth/session *code* is shared, via `assets/js/
    site-auth.js`) — an accepted gap of the no-build-step, no-templating
    constraint (design.md Risks), not a silent one.
-4. `redesign-threejs-planner-split` is implemented and verified locally;
-   production (`https://spatialflow-poc.vercel.app/`) has not yet been
-   redeployed with this change — only closeout (drift check + archive) and
-   the next push remain.
+4. No open items from `redesign-threejs-planner-split` or
+   `add-showcase-chair-spin` — both deployed and verified in production.
 
 ## Coherence
 
@@ -82,6 +82,6 @@ one-line rationale per law.
 ## Where to dig
 
 - Model: [ARCHITECTURE.md](ARCHITECTURE.md) · Code map: [IMPLEMENTATION.md](IMPLEMENTATION.md)
-- In flight: `redesign-threejs-planner-split` — `openspec/changes/redesign-threejs-planner-split/`
+- In flight: none
 - Reviews: [reviews/review-redesign-tailwind-planner.md](reviews/review-redesign-tailwind-planner.md), [reviews/review-redesign-jesko-aesthetic.md](reviews/review-redesign-jesko-aesthetic.md), [reviews/review-add-user-auth-persistence.md](reviews/review-add-user-auth-persistence.md), [reviews/review-redesign-threejs-planner-split.md](reviews/review-redesign-threejs-planner-split.md) · Notes: `general/`
 - Image credits: `images/CREDITS.md`
