@@ -198,6 +198,38 @@ function initHero() {
   initHeroScene(portal, getProgress);
 }
 
+/**
+ * initShowcaseSpin — a diagonal parallax glide for the #showcase chair
+ * image: it drifts lower-left-to-upper-right while growing, scrubbed to
+ * scroll position over the section's whole time on screen (design.md
+ * Decision 1). Two earlier iterations were tried and rejected live: a full
+ * rotation (read as broken, not premium) and a small parallax rise (too
+ * subtle to register as intentional motion). This glide keeps the
+ * mechanism but widens the travel/scale range and drops rotation, so the
+ * motion is clearly visible without looking like a spin.
+ */
+function initShowcaseSpin() {
+  if (prefersReducedMotion) return;
+  var section = document.getElementById("showcase");
+  var chairImg = section && section.querySelector('img[src*="showcase-chair"]');
+  if (!chairImg) return;
+
+  gsap.fromTo(chairImg,
+    { x: -70, y: 130, scale: 0.78 },
+    {
+      x: 70, y: -130, scale: 1.12,
+      ease: "none",
+      scrollTrigger: {
+        trigger: section,
+        start: "top bottom",
+        end: "bottom top",
+        scrub: true
+      }
+    }
+  );
+}
+
 initLenis();
 initScrollReveal();
 initHero();
+initShowcaseSpin();

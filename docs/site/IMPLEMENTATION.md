@@ -47,6 +47,7 @@
 | `initHeroScrub` (presentation) | `scroll signal → DOM(hero portal transform)` — GSAP `ScrollTrigger` (`pin`+`scrub`) | `assets/js/marketing-scene.js:initHeroScrub` | built |
 | `initHeroScene` (presentation) | `scroll progress → WebGL canvas` — Three.js scene, feature-detected, paused off-screen | `assets/js/marketing-scene.js:initHeroScene` | built |
 | `initLenis` (presentation) | `wheel/touch input → smoothed scroll position` | `assets/js/marketing-scene.js:initLenis` | built |
+| `initShowcaseSpin` (presentation) | `scroll signal → DOM(#showcase chair img transform)` — diagonal parallax glide (`x`/`y`/`scale`), scrubbed `ScrollTrigger`, not pinned | `assets/js/marketing-scene.js:initShowcaseSpin` | built |
 | `initAccordion` (presentation) | `click → DOM(.acc-item.is-open)` | `index.html:initAccordion` | built |
 | `initNavContrast` (presentation) | `scroll signal → DOM(#site-nav.nav-dark)` | `index.html:initNavContrast` | built |
 | `signUp` (Trm) | `(email, password) → User` | `assets/js/site-auth.js:signUp` | built |
@@ -177,3 +178,26 @@
   showing the correct `{top:0}` while the compositor painted it elsewhere).
   Fixed by passing `{ autoRaf: false }` to `new Lenis(...)` in
   `assets/js/marketing-scene.js:initLenis`.
+- **Showcase chair motion (`add-showcase-chair-spin`)**: `initShowcaseSpin`
+  (`assets/js/marketing-scene.js`) animates the `#showcase` chair `<img>` via
+  a scrubbed `ScrollTrigger` (`start: "top bottom"`, `end: "bottom top"`,
+  `scrub: true`) — no pin, reusing GSAP/ScrollTrigger already loaded for the
+  hero. **Deviation from the initial design, two rounds of live user
+  feedback**: (1) a full 360° `rotation` scrub ("spin as you scroll") was
+  rejected as "looks weird" — a flat product photo doing a complete
+  end-over-end turn has no third dimension to sell the rotation, so it read
+  as glitching rather than turning. (2) replaced with a small parallax rise
+  (`y: 70→-70`, `rotation: -6°→6°`, `scale: 0.94→1.02`), rejected as "not
+  obvious enough" — correct mechanism, too subtle a range to register while
+  reading the section. Settled on a **diagonal parallax glide**: `x: -70→70`,
+  `y: 130→-130`, `scale: 0.78→1.12`, no rotation (dropped — it was the least
+  legible axis in round 2 and the most spin-adjacent) — the chair enters
+  lower-left and smaller, glides to upper-right while growing ~44%, clearly
+  visible without reading as a spin. Presentation only, gated by the existing
+  `prefersReducedMotion` flag. Verified live via real (wheel-driven) scroll:
+  the image's computed `transform` matrix changed continuously with scroll
+  position — note that driving scroll with `window.scrollTo()` directly does
+  **not** trigger this (or any other `ScrollTrigger` on this page), because
+  Lenis owns scroll position and only fires its `scroll` event — which
+  drives `ScrollTrigger.update()` — on wheel/touch/its-own-API input, not on
+  bare native `scrollTo` calls.

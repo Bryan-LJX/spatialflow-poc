@@ -228,6 +228,13 @@ DOM/canvas), not new `Dat`.
   must not run its own rAF loop alongside GSAP's — see Notes/divergences) and
   synced to `ScrollTrigger.update()` on every Lenis scroll event. Skipped
   entirely under `prefers-reduced-motion` — native scroll instead.
+- **`initShowcaseSpin`** (`assets/js/marketing-scene.js:initShowcaseSpin`,
+  `add-showcase-chair-spin`) — a diagonal parallax glide for the `#showcase`
+  chair image (drifts lower-left → upper-right while growing ~44% larger)
+  over its section's entire time on screen, via a scrubbed (not pinned)
+  `ScrollTrigger`. Two earlier iterations were rejected live: a full 360°
+  rotation (read as broken, not premium) and a small parallax rise (too
+  subtle to notice). No-ops under `prefers-reduced-motion`.
 - **`initAccordion`** (`index.html:initAccordion`) — toggles `.is-open` on
   `.acc-item` advantage rows. Unchanged, plain vanilla JS — no dependency on
   the WebGL/GSAP/Lenis stack.
